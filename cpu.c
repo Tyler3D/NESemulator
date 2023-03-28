@@ -31,7 +31,8 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
         // Need to figure out what this
         return true;
     } else if (addr >= 0x4020 && addr <= 0xFFFF) {
-        mapped_addr = rom.readCPUMapper(addr, &mapped_addr);
+        if (!rom.readCPUMapper(addr, &mapped_addr))
+            return false;
         *data = rom.PRG_ROM_data[mapped_addr];
     } else
         return false;
@@ -56,7 +57,8 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
         // Might need different method than using rom.readCPUMapper
         printf("Writing to rom? Sus???\n");
         return false;
-        //mapped_addr = rom.readCPUMapper(addr, &mapped_addr);
+        //if (!rom.readCPUMapper(addr, &mapped_addr))
+        //    return false;
         //rom.PRG_ROM_data[mapped_addr] = *data;
     } else
         return false;
