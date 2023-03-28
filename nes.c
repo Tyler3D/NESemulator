@@ -4,8 +4,19 @@
 #include "cpu.h"
 #include "rom.h"
 
+FILE *fp;
+
+void fail() {
+    free(cpu.memory);
+    if (rom.CHR_ROM_SIZE > 0)
+        free(rom.CHR_ROM_data);
+    free(rom.PRG_ROM_data);
+    fclose(fp);
+    exit(0);
+}
+
 int main(int argc, char **argv) {
-    FILE *fp;
+    long long clocks = 0;
     if (argc != 2) {
         printf("Usage: %s <game.nes>\n", argv[0]);
         return 0;
@@ -47,41 +58,52 @@ int main(int argc, char **argv) {
     fseek(fp, 512, SEEK_CUR);
    }
 
-    if (!(rom.PRG_ROM_data = malloc(16384 * rom.PRG_ROM_SIZE))) {
-        printf("Malloc failed\n");
+    if (!(rom.PRG_ROM_data = calloc(16384 * rom.PRG_ROM_SIZE, sizeof(uint8_t)))) {
+        printf("Calloc failed\n");
         goto fileEnd;
     }
 
     if (fread(rom.PRG_ROM_data, 16384, rom.PRG_ROM_SIZE, fp) != 16384 * rom.PRG_ROM_SIZE) {
         printf("Could not read PRG_ROM\n");
-        goto fail;
+        goto rom_fail;
     }
 
     if (rom.CHR_ROM_SIZE > 0) {
-        if (!(rom.CHR_ROM_data = malloc(8192 * rom.CHR_ROM_SIZE))) {
-            printf("Malloc failed\n");
+        if (!(rom.CHR_ROM_data = calloc(8192 * rom.CHR_ROM_SIZE, sizeof(uint8_t)) )) {
+            printf("Calloc failed\n");
             free(rom.PRG_ROM_data);
             goto fileEnd;
         }
         
         if (fread(rom.CHR_ROM_data, 8192, rom.CHR_ROM_SIZE, fp) != 8192 * rom.CHR_ROM_SIZE) {
             printf("Could not read CHR_ROM\n");
-            goto fail;
+            goto rom_fail;
         }
     }
 
     if(!setMapper())
-        goto fail;
+        goto rom_fail;
     
-    if (!(cpu.memory = malloc(0x07FF))) { // 2K internal Ram
-        printf("Malloc failed\n");
-        goto fail;
+    if (!(cpu.memory = calloc(0x07FF, sizeof(uint8_t)))) { // 2K internal Ram
+        printf("Calloc failed\n");
+        goto rom_fail;
+    }
+    cpu.fail = &fail;
+    cpu_reset();
+
+    while (1) {
+        // Need to add timing
+        // When we have a ppu
+        clocks++;
+        //ppu_clock();
+        if ((clocks % 3) == 0) {
+            cpu_clock();
+        }
     }
 
 
-    //ppuFail:
     free(cpu.memory);
-    fail:
+    rom_fail:
     if (rom.CHR_ROM_SIZE > 0)
         free(rom.CHR_ROM_data);
     free(rom.PRG_ROM_data);

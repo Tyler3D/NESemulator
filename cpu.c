@@ -62,3 +62,37 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
         return false;
     return true;
 }
+
+void cpu_reset() {
+    /*
+    https://www.nesdev.org/wiki/CPU_memory_map
+    The CPU expects interrupt vectors in a fixed place at the end of the cartridge space:
+    $FFFA–$FFFB = NMI vector
+    $FFFC–$FFFD = Reset vector
+    $FFFE–$FFFF = IRQ/BRK vector
+
+    Need to implement IRQ and NMI
+*/
+    // 6502 is little endian
+	uint8_t lo, hi = 0;
+    if (!cpu_read(0xFFFC, &lo) || !cpu_read(0xFFFD, &hi)) {
+        printf("Could not read reset vector\n");
+        cpu.fail();
+    }
+	cpu.pc = (hi << 8) | lo;
+
+	// Reset registers
+	cpu.a = 0;
+	cpu.x = 0;
+	cpu.y = 0;
+	cpu.sp = 0; // Might need to be set to some value
+	cpu.status = 0x00;
+}
+
+void cpu_clock() {
+    uint8_t opcode;
+    if (!cpu_read(cpu.pc, &opcode)) {
+        printf("Could not read opcode\n");
+        cpu.fail();
+    }
+}
