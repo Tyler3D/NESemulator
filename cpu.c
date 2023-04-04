@@ -98,21 +98,26 @@ void cpu_clock() {
         It looks like the last 2 bits of the opcode determine which "parts" of the CPU work
         Whether to use control instructions (00), the ALU (01), or read/write instructions (10)
         The next three bits appear to determine the addressing mode
+        We split opcodes into groups so we can generalize instructions and avoid
+        rewriting code
     */
     uint8_t opcode;
     if (!cpu_read(cpu.pc, &opcode)) {
         printf("Could not read opcode\n");
         cpu.fail();
     }
-    
+
     if ((opcode % 4) == 0) {
         // Control instructions
+        printf("handle Control 0x%x\n", opcode);
         handleControl(opcode);
     } else if ((opcode % 4) == 1) {
         // ALU instructions
+        printf("handle ALU 0x%x\n", opcode);
         handleALU(opcode);
     } else if ((opcode % 4) == 2) {
         // RMW operations
+        printf("handle RMW 0x%x\n", opcode);
         handleRMW(opcode);
     } else {
         // Illegal instructions

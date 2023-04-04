@@ -62,8 +62,8 @@ int main(int argc, char **argv) {
         printf("Calloc failed\n");
         goto fileEnd;
     }
-
-    if (fread(rom.PRG_ROM_data, 16384, rom.PRG_ROM_SIZE, fp) != 16384 * rom.PRG_ROM_SIZE) {
+    //printf("read: %lu\n", fread(rom.PRG_ROM_data, 16384, rom.PRG_ROM_SIZE, fp));
+    if (fread(rom.PRG_ROM_data, 16384, rom.PRG_ROM_SIZE, fp) != rom.PRG_ROM_SIZE) {
         printf("Could not read PRG_ROM\n");
         goto rom_fail;
     }
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
             goto fileEnd;
         }
         
-        if (fread(rom.CHR_ROM_data, 8192, rom.CHR_ROM_SIZE, fp) != 8192 * rom.CHR_ROM_SIZE) {
+        if (fread(rom.CHR_ROM_data, 8192, rom.CHR_ROM_SIZE, fp) != rom.CHR_ROM_SIZE) {
             printf("Could not read CHR_ROM\n");
             goto rom_fail;
         }
