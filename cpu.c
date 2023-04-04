@@ -82,19 +82,41 @@ void cpu_reset() {
         cpu.fail();
     }
 	cpu.pc = (hi << 8) | lo;
+    cpu.cycles = 0;
 
 	// Reset registers
 	cpu.a = 0;
 	cpu.x = 0;
 	cpu.y = 0;
-	cpu.sp = 0; // Might need to be set to some value
-	cpu.status = 0x00;
+	cpu.sp = (uint8_t) 0x100; // Stack addresses 0x100-0x1ff in memory
+	cpu.status = 0x00 | always_on_flag; // https://www.nesdev.org/wiki/Status_flags#The_B_flag
 }
 
 void cpu_clock() {
+    /*
+        Using this reference: https://www.nesdev.org/wiki/CPU_unofficial_opcodes
+        It looks like the last 2 bits of the opcode determine which "parts" of the CPU work
+        Whether to use control instructions (00), the ALU (01), or read/write instructions (10)
+        The next three bits appear to determine the addressing mode
+    */
     uint8_t opcode;
     if (!cpu_read(cpu.pc, &opcode)) {
         printf("Could not read opcode\n");
+        cpu.fail();
+    }
+    
+    if ((opcode % 4) == 0) {
+        // Control instructions
+        handleControl(opcode);
+    } else if ((opcode % 4) == 1) {
+        // ALU instructions
+        handleALU(opcode);
+    } else if ((opcode % 4) == 2) {
+        // RMW operations
+        handleRMW(opcode);
+    } else {
+        // Illegal instructions
+        printf("Illegal instruction\n");
         cpu.fail();
     }
 }
