@@ -2,6 +2,58 @@
 #include "rom.h"
 #include "cpu.h"
 
+uint8_t zeropage(uint8_t low, uint8_t high, uint16_t *addr, uint8_t offset) {
+    uint8_t byte;
+    cpu.pc++;
+    if (!cpu_read(cpu.pc + offset, &low)) {
+        printf("Could not read addr\n");
+        cpu.fail();
+    }
+
+    *addr = (((uint16_t) high) << 8) | (uint16_t) low;
+    if (!cpu_read(*addr, &byte)) {
+        printf("Could not read byte\n");
+        cpu.fail();
+    }
+
+    cpu.pc++;
+    return byte;
+}
+
+uint8_t absolute(uint8_t low, uint8_t high, uint16_t *addr, uint8_t offset) {
+    uint8_t byte;
+    cpu.pc++;
+    if (!cpu_read(cpu.pc, &low)) {
+        printf("Could not read low addr\n");
+        cpu.fail();
+    }
+    cpu.pc++;
+    if (!cpu_read(cpu.pc, &high)) {
+        printf("Could not read high addr\n");
+        cpu.fail();
+    }
+    cpu.pc++;
+    *addr = ((((uint16_t) high) << 8) | (uint16_t) low) + offset;
+    if (!cpu_read(*addr, &byte)) {
+        printf("Could not read byte\n");
+        cpu.fail();
+    }
+    return byte;
+}
+
+uint8_t immediate(char *assembly) {
+    uint8_t byte;
+    cpu.pc++;
+    if (!cpu_read(cpu.pc, &byte)) {
+        printf("Could not read byte\n");
+        cpu.fail();
+    }
+    cpu.pc++;
+    assembly = "#i";
+    cpu.cycles += 2;
+    return byte;
+}
+
 void ORA(uint8_t byte, char *assembly, uint16_t addr) {
     printf("ORA %s\n", assembly);
     cpu.a = cpu.a | byte;
@@ -65,6 +117,14 @@ void SBC(uint8_t byte, char *assembly, uint16_t addr) {
     SET_NEG_FLAG(cpu.a)
 }
 
+
+void LDX(uint8_t byte, char *assembly) {
+    printf("LDX %s\n", assembly);
+    cpu.a = byte;
+    SET_ZERO_FLAG(cpu.a)
+    SET_NEG_FLAG(cpu.a)
+}
+
 void handleControl(uint8_t opcode) {
 
 }
@@ -93,7 +153,7 @@ void handleALU(uint8_t opcode) {
     uint8_t low = 0;
     uint16_t addr;
     uint8_t byte;
-    char *assembly;
+    char *assembly = NULL;
     void (*func)(uint8_t, char *, uint16_t);
 
     if (opcode < 0x20) // ORA
@@ -136,52 +196,19 @@ void handleALU(uint8_t opcode) {
         break;
 
         case 0x05: // zeropage
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &low)) {
-            printf("Could not read addr\n");
-            cpu.fail();
-        }
-
-        addr = (((uint16_t) high) << 8) | (uint16_t) low;
-        if (!cpu_read(addr, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
-        cpu.pc++;
+        byte = zeropage(low, high, &addr, 0);
         assembly = "d";
         cpu.cycles += 3;
         func(byte, assembly, addr);
         break;
 
         case 0x09: // immediate
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        assembly = "#i";
-        cpu.cycles += 2;
+        byte = immediate(assembly);
         func(byte, assembly, 0);
         break;
 
         case 0x0D: // absolute
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &low)) {
-            printf("Could not read low addr\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &high)) {
-            printf("Could not read high addr\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        addr = (((uint16_t) high) << 8) | (uint16_t) low;
-        if (!cpu_read(addr, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
+        byte = absolute(low, high, &addr, 0);
         assembly = "a";
         cpu.cycles += 4;
         func(byte, assembly, addr);
@@ -209,62 +236,21 @@ void handleALU(uint8_t opcode) {
         break;
 
         case 0x15: // zeropage, X
-        cpu.pc++;
-        if (!cpu_read((cpu.pc + cpu.x), &low)) {
-            printf("Could not read addr\n");
-            cpu.fail();
-        }
-
-        addr = (((uint16_t) high) << 8) | (uint16_t) low;
-        if (!cpu_read(addr, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
-        cpu.pc++;
+        byte = zeropage(low, high, &addr, cpu.x);
         assembly = "d,x";
         cpu.cycles += 4;
         func(byte, assembly, addr);
         break;
 
         case 0x19: // absolute, Y
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &low)) {
-            printf("Could not read low addr\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &high)) {
-            printf("Could not read high addr\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        addr = ((((uint16_t) high) << 8) | (uint16_t) low) + cpu.y;
-        if (!cpu_read(addr, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
+        byte = absolute(low, high, &addr, cpu.y);
         assembly = "a,y";
         cpu.cycles += (((uint16_t) (addr - cpu.y) % 0xFF) + cpu.y <= 0xFF) ? 4 : 5; // add 1 to cycles if page boundary is crossed
         func(byte, assembly, addr);
         break;
 
         case 0x1D: // absolute, X
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &low)) {
-            printf("Could not read low addr\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        if (!cpu_read(cpu.pc, &high)) {
-            printf("Could not read high addr\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        addr = ((((uint16_t) high) << 8) | (uint16_t) low) + cpu.x;
-        if (!cpu_read(addr, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
+        byte = absolute(low, high, &addr, cpu.x);
         cpu.cycles += (((uint16_t) (addr - cpu.x) % 0xFF) + cpu.x <= 0xFF) ? 4 : 5; // add 1 to cycles if page boundary is crossed
         assembly = "a,x";
         func(byte, assembly, addr);
@@ -273,5 +259,70 @@ void handleALU(uint8_t opcode) {
 }
 
 void handleRMW(uint8_t opcode) {
+    uint8_t high = 0;
+    uint8_t low = 0;
+    uint16_t addr;
+    uint8_t byte;
+    char *assembly = NULL;
+    void (*func)(uint8_t, char *, uint16_t);
+    /*
+    if (opcode < 0x20) // ORA
+        func = &ORA;
+    else if (opcode < 0x40) // AND
+        func = &AND;
+    else if (opcode < 0x60) // EOR
+        func = &EOR;
+    else if (opcode < 0x80) // ADC
+        func = &ADC;
+    else if (opcode < 0xA0) // STA
+        func = &STA;
+    else if (opcode < 0xC0) // LDA
+        func = &LDA;
+    else if (opcode < 0xE0) // CMP
+        func = &CMP;
+    else
+        func = &SBC;
+    */
+   switch (opcode % 0x20) {
+        case 0x02: // immediate #i Only works on LDX
+        if (opcode == 0xA2) {
+            cpu.pc++;
+            uint8_t byte;
+            if (!cpu_read(cpu.pc, &byte)) {
+                printf("Could not read byte\n");
+                cpu.fail();
+            }
+            LDX(byte, "#i");
+        }
+        break;
+        
+        case 0x06: // zeropage
+        byte = zeropage(low, high, &addr, 0);
+        break;
 
+        case 0x0A: // Works on registers
+
+        break;
+
+        case 0x0E: // absolute
+        byte = absolute(low, high, &addr, 0);
+        break;
+
+        case 0x12: // Fail
+        printf("Broken insturction %u\n", opcode);
+        cpu.fail();
+        break;
+
+        case 0x16: // zeropage, X
+        byte = zeropage(low, high, &addr, cpu.x);
+        break;
+
+        case 0x1A: // impl
+
+        break;
+
+        case 0x1E: // absolute, X
+        byte = absolute(low, high, &addr, cpu.x);
+        break;
+   }
 }
