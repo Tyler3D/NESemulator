@@ -45,16 +45,20 @@ Current solution is to manually check if offset is messed up like this:
 
 But this function could probably implement it as well
 */
+//(*idputs(int (*puts)(const char *)))(const char *)
+int getAddressingMode(uint8_t opcode) {
+    return NULL;
+}
 
-uint8_t zeropage(uint8_t low, uint8_t high, uint16_t *addr, uint8_t offset) {
+uint8_t zeropage(uint8_t *low, uint8_t *high, uint16_t *addr, uint8_t offset) {
     uint8_t byte;
     cpu.pc++;
-    if (!cpu_read(cpu.pc + offset, &low)) {
+    if (!cpu_read(cpu.pc + offset, low)) {
         printf("Could not read addr\n");
         cpu.fail();
     }
 
-    *addr = (((uint16_t) high) << 8) | (uint16_t) low;
+    *addr = (((uint16_t) *high) << 8) | (uint16_t) *low;
     if (!cpu_read(*addr, &byte)) {
         printf("Could not read byte\n");
         cpu.fail();
@@ -80,20 +84,20 @@ Current solution is to manually check if offset is messed up like this:
 But this function could probably implement it as well
 */
 
-uint8_t absolute(uint8_t low, uint8_t high, uint16_t *addr, uint8_t offset) {
+uint8_t absolute(uint8_t *low, uint8_t *high, uint16_t *addr, uint8_t offset) {
     uint8_t byte;
     cpu.pc++;
-    if (!cpu_read(cpu.pc, &low)) {
+    if (!cpu_read(cpu.pc, low)) {
         printf("Could not read low addr\n");
         cpu.fail();
     }
     cpu.pc++;
-    if (!cpu_read(cpu.pc, &high)) {
+    if (!cpu_read(cpu.pc, high)) {
         printf("Could not read high addr\n");
         cpu.fail();
     }
     cpu.pc++;
-    *addr = ((((uint16_t) high) << 8) | (uint16_t) low) + offset;
+    *addr = ((((uint16_t) *high) << 8) | (uint16_t) *low) + offset;
     if (!cpu_read(*addr, &byte)) {
         printf("Could not read byte\n");
         cpu.fail();
@@ -119,6 +123,18 @@ uint8_t immediate(char *assembly) {
     cpu.cycles += 2;
     return byte;
 }
+
+void compare(uint8_t *first, uint8_t *second ) {
+    uint8_t result = *first - *second;
+    SET_CARRY_FLAG(*first, -1 * (uint16_t) *second, 0)
+    SET_ZERO_FLAG(result)
+    SET_NEG_FLAG(result)
+}
+
+void branch(uint8_t *opcode) {
+    
+}
+
 
 /*ALU Instructions*/
 void ORA(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
@@ -167,10 +183,7 @@ void STA(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
 
 void CMP(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
     printf("CMP %s\n", assembly);
-    uint8_t result = cpu.a - *byte;
-    SET_CARRY_FLAG(cpu.a, -1 * (uint16_t) *byte, 0)
-    SET_ZERO_FLAG(result)
-    SET_NEG_FLAG(result)
+    compare(&cpu.a, byte);
 }
 
 void SBC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
@@ -287,7 +300,177 @@ void DEC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
 
 /* Will isolate Control assembly instructions */
 void handleControl(uint8_t opcode) {
+    uint8_t high = 0;
+    uint8_t low = 0;
+    uint16_t addr;
+    uint8_t byte;
+    char *assembly = NULL;
+    void (*func)(uint8_t *, char *, uint16_t *, bool);
 
+    switch (opcode) {
+        case 0x00: // BRK impl
+
+        break;
+
+        case 0x08: // PHP impl
+
+        break;
+
+        case 0x10: // BPL rel
+
+        break;
+
+        case 0x18: // CLC impl
+
+        break;
+
+        case 0x20: // JSR abs
+
+        break;
+
+        case 0x24: // BIT zpg
+
+        break;
+
+        case 0x28: // PLP impl
+
+        break;
+
+        case 0x2C: // BIT abs
+
+        break;
+
+        case 0x30: // BMI rel
+
+        break;
+
+        case 0x38: // SEC impl
+
+        break;
+
+        case 0x40: // RTI impl
+
+        break;
+
+        case 0x48: // PHA impl
+
+        break;
+
+        case 0x4C: // JMP abs
+
+        break;
+        
+        case 0x50: // BVC rel
+
+        break;
+
+        case 0x58: // CLI impl
+
+        break;
+
+        case 0x60: // RTS impl
+
+        break;
+
+        case 0x68: // PLA impl
+
+        break;
+
+        case 0x6C: // JMP ind
+
+        break;
+
+        case 0x70: // BVS rel
+
+        break;
+
+        case 0x78: // SEI impl
+
+        break;
+
+        case 0x84: // STY zpg
+
+        break;
+
+        case 0x88: // DEY impl
+
+        break;
+
+        case 0x8C: // STY abs
+
+        break;
+
+        case 0x90: // BCC rel
+
+        break;
+
+        case 0x94: // STY zpg,X
+
+        break;
+
+        case 0x98: // TYA impl
+
+        break;
+
+        case 0xA0: // LDY #
+
+        break;
+
+        case 0xA4: // LDY zpg
+
+        break;
+
+        case 0xA8: // TAY impl
+
+        break;
+
+        case 0xAC: // LDY abs
+
+        break;
+
+        case 0xB0: // BCS rel
+
+        break;
+    }
+
+    switch (opcode % 0x20) {
+        case 0x00: // impl, abs, #
+
+        break;
+
+        case 0x04: // zeropage
+        byte = zeropage(&low, &high, &addr, 0);
+        break;
+
+        case 0x08: // impl
+
+        break;
+
+        case 0x0C: // abs
+        byte = absolute(&low, &high, &addr, 0);
+        break;
+
+        case 0x10: // rel
+
+        break;
+
+        case 0x14: // zeropage, X
+        byte = zeropage(&low, &high, &addr, cpu.x);
+        break;
+
+        case 0x18: // impl
+
+        break;
+
+        case 0x1C: // absolute, X
+        byte = absolute(&low, &high, &addr, cpu.x);
+        break;
+
+        default:
+            printf("Broken Instruction 0x%x\n", opcode);
+            cpu.fail();
+        break;
+    }
 }
 
 /* Will isolate ALU assembly instructions */
@@ -339,7 +522,7 @@ void handleALU(uint8_t opcode) {
         break;
 
         case 0x05: // zeropage
-        byte = zeropage(low, high, &addr, 0);
+        byte = zeropage(&low, &high, &addr, 0);
         assembly = "d";
         cpu.cycles += 3;
         func(&byte, assembly, &addr, false);
@@ -351,7 +534,7 @@ void handleALU(uint8_t opcode) {
         break;
 
         case 0x0D: // absolute
-        byte = absolute(low, high, &addr, 0);
+        byte = absolute(&low, &high, &addr, 0);
         assembly = "a";
         cpu.cycles += 4;
         func(&byte, assembly, &addr, false);
@@ -374,27 +557,27 @@ void handleALU(uint8_t opcode) {
         }
         cpu.pc++;
         assembly = "(d),y"; // STA always does 6 cycles
-        cpu.cycles += ((((uint16_t) low - cpu.y) <= 0xFF) && func != &STA) ? 5 : 6; // add 1 to cycles if page boundary is crossed
+        cpu.cycles += ((((uint16_t) low + cpu.y) <= 0xFF) && func != &STA) ? 5 : 6; // add 1 to cycles if page boundary is crossed
         func(&byte, assembly, &addr, false);
         break;
 
         case 0x15: // zeropage, X
-        byte = zeropage(low, high, &addr, cpu.x);
+        byte = zeropage(&low, &high, &addr, cpu.x);
         assembly = "d,x";
         cpu.cycles += 4;
         func(&byte, assembly, &addr, false);
         break;
 
         case 0x19: // absolute, Y
-        byte = absolute(low, high, &addr, cpu.y);
+        byte = absolute(&low, &high, &addr, cpu.y);
         assembly = "a,y"; // // STA always does 5 cycles
-        cpu.cycles += ((((uint16_t) (addr - cpu.y) % 0xFF) + cpu.y <= 0xFF) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
+        cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.y) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
         func(&byte, assembly, &addr, false);
         break;
 
         case 0x1D: // absolute, X
-        byte = absolute(low, high, &addr, cpu.x); // STA always does 5 cycles
-        cpu.cycles += ((((uint16_t) (addr - cpu.x) % 0xFF) + cpu.x <= 0xFF) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
+        byte = absolute(&low, &high, &addr, cpu.x); // STA always does 5 cycles
+        cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.x) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
         assembly = "a,x";
         func(&byte, assembly, &addr, false);
         break;
@@ -442,7 +625,7 @@ void handleRMW(uint8_t opcode) {
         break;
         
         case 0x06: // zeropage
-        byte = zeropage(low, high, &addr, 0);
+        byte = zeropage(&low, &high, &addr, 0);
         assembly = "d";
         cpu.cycles += (func == &LDX) ? 3 : 5; // LDX is only 3 cycles
         func(&byte, assembly, &addr, false);
@@ -458,7 +641,7 @@ void handleRMW(uint8_t opcode) {
         break;
 
         case 0x0E: // absolute
-        byte = absolute(low, high, &addr, 0);
+        byte = absolute(&low, &high, &addr, 0);
         assembly = "a";
         cpu.cycles += (func == &LDX || func == &STX) ? 4 : 6; // LDX and STX are only 4 cycles
         func(&byte, assembly, &addr, false);
@@ -471,10 +654,10 @@ void handleRMW(uint8_t opcode) {
 
         case 0x16: // zeropage, X or Y
         if (opcode == 0x96 || opcode == 0xB6) { // STX and LDX use zeropage, Y
-            byte = zeropage(low, high, &addr, cpu.y);
+            byte = zeropage(&low, &high, &addr, cpu.y);
             assembly = "d,y";
         } else {
-            byte = zeropage(low, high, &addr, cpu.x);
+            byte = zeropage(&low, &high, &addr, cpu.x);
             assembly = "d,x";
         }
         cpu.cycles += (func == &LDX || func == &STX) ? 4 : 6; // LDX and STX are only 4 cycles
@@ -504,13 +687,15 @@ void handleRMW(uint8_t opcode) {
 
         case 0x1E: // absolute, X or absolute, Y
         // Need to figure out how many cycles
-        if (opcode == 0xBE) // LDX uses absolute, Y
-            byte = absolute(low, high, &addr, cpu.y);
-        else
-            byte = absolute(low, high, &addr, cpu.x);
-        printf("Cycles count idk\n");
-        cpu.cycles += 0;//idk; //(((uint16_t) (addr - cpu.x) % 0xFF) + cpu.x <= 0xFF) ? 4 : 5; // add 1 to cycles if page boundary is crossed
-        assembly = "a,x";
+        if (opcode == 0xBE) {// LDX uses absolute, Y
+            byte = absolute(&low, &high, &addr, cpu.y);
+            cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.y)) ? 4 : 5;
+            assembly = "a,y";
+        } else {
+            byte = absolute(&low, &high, &addr, cpu.x);
+            cpu.cycles += 7;
+            assembly = "a,x";
+        }
         func(&byte, assembly, &addr, false);
         break;
         

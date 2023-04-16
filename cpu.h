@@ -27,6 +27,8 @@
     else\
         cpu.status & ~carry;}
 
+#define CHECK_PAGE_BOUNDARY(ADDR, REG) ( ((uint16_t) (ADDR - REG) % 0xFF) + REG <= 0xFF ) // Check this
+
 struct CPU {
     uint8_t x;
     uint8_t y;
