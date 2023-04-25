@@ -3,6 +3,7 @@
 #include <string.h>
 #include "cpu.h"
 #include "rom.h"
+#include "logger.h"
 
 FILE *fp;
 
@@ -11,8 +12,9 @@ void fail() {
     if (rom.CHR_ROM_SIZE > 0)
         free(rom.CHR_ROM_data);
     free(rom.PRG_ROM_data);
+    fclose(logfp);
     fclose(fp);
-    exit(0);
+    exit(1);
 }
 
 int main(int argc, char **argv) {
@@ -23,8 +25,15 @@ int main(int argc, char **argv) {
     }
 
     fp = fopen(argv[1], "rb");
-    if (!fp)
+    if (!fp) {
         printf("Could not open file\n");
+        return 0;
+    }
+
+    if (!log_init()) {
+        printf("Could not start logger\n");
+        return 0;
+    }
 
     if (fread(rom.header, 1, HEADER_SIZE, fp) != HEADER_SIZE) {
         printf("Could not read header\n");
@@ -110,5 +119,6 @@ int main(int argc, char **argv) {
 
     fileEnd:
     fclose(fp);
+    fclose(logfp);
     return 0;
 }

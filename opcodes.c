@@ -24,8 +24,8 @@ We don't care about the specifics but have to increment cycles by a different am
 /*
 The following functions help get target bytes to modify
 when executing various 6502 instructions.
-cpu.pc is expected to be reading the opcode and on completion,
-cpu.pc will point to the next opcode.
+cpu.pc is expected to be reading the cpu.opcode and on completion,
+cpu.pc will point to the next cpu.opcode.
 
 Might have to modify to account for interrupts
 */
@@ -47,23 +47,14 @@ But this function could probably implement it as well
 */
 //(*idputs(int (*puts)(const char *)))(const char *)
 int getAddressingMode(uint8_t opcode) {
-    return NULL;
+    return 0;
 }
 
-uint8_t zeropage(uint8_t *low, uint8_t *high, uint16_t *addr, uint8_t offset) {
+uint8_t zeropage(uint16_t *addr, uint8_t offset) {
     uint8_t byte;
-    cpu.pc++;
-    if (!cpu_read(cpu.pc + offset, low)) {
-        printf("Could not read addr\n");
-        cpu.fail();
-    }
-
-    *addr = (((uint16_t) *high) << 8) | (uint16_t) *low;
-    if (!cpu_read(*addr, &byte)) {
-        printf("Could not read byte\n");
-        cpu.fail();
-    }
-
+    READ_BYTE_FROM_ADDR(cpu.pc + offset, cpu.low)
+    SET_ADDR(*addr, 0)
+    READ_BYTE_FROM_ADDR(*addr, byte)
     cpu.pc++;
     return byte;
 }
@@ -84,24 +75,12 @@ Current solution is to manually check if offset is messed up like this:
 But this function could probably implement it as well
 */
 
-uint8_t absolute(uint8_t *low, uint8_t *high, uint16_t *addr, uint8_t offset) {
+uint8_t absolute(uint16_t *addr, uint8_t offset) {
     uint8_t byte;
-    cpu.pc++;
-    if (!cpu_read(cpu.pc, low)) {
-        printf("Could not read low addr\n");
-        cpu.fail();
-    }
-    cpu.pc++;
-    if (!cpu_read(cpu.pc, high)) {
-        printf("Could not read high addr\n");
-        cpu.fail();
-    }
-    cpu.pc++;
-    *addr = ((((uint16_t) *high) << 8) | (uint16_t) *low) + offset;
-    if (!cpu_read(*addr, &byte)) {
-        printf("Could not read byte\n");
-        cpu.fail();
-    }
+    READ_BYTE_PC(cpu.low)
+    READ_BYTE_PC(cpu.high)
+    SET_ADDR(*addr, offset)
+    READ_BYTE_FROM_ADDR(*addr, byte)
     return byte;
 }
 
@@ -113,13 +92,9 @@ So cycles is modified here
 
 uint8_t immediate(char *assembly) {
     uint8_t byte;
-    cpu.pc++;
-    if (!cpu_read(cpu.pc, &byte)) {
-        printf("Could not read byte\n");
-        cpu.fail();
-    }
-    cpu.pc++;
-    assembly = "#i";
+    READ_BYTE_PC(byte)
+    sprintf(cpu.asm_args, "#%X", byte);
+    //assembly = "#i";
     cpu.cycles += 2;
     return byte;
 }
@@ -137,30 +112,35 @@ void branch(uint8_t *opcode) {
 
 
 /*ALU Instructions*/
-void ORA(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("ORA %s\n", assembly);
+void ORA(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("ORA %s\n", cpu.instruction);
+    cpu.instruction = "ORA";
     cpu.a = cpu.a | *byte;
     SET_ZERO_FLAG(cpu.a)
     SET_NEG_FLAG(cpu.a)
 }
 
-void AND(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("AND %s\n", assembly);
+void AND(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //log_state(4,)
+    //printf("AND %s\n", cpu.instruction);
+    cpu.instruction = "AND";
     cpu.a = cpu.a & *byte;
     SET_ZERO_FLAG(cpu.a)
     SET_NEG_FLAG(cpu.a)
 }
 
-void EOR(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("EOR %s\n", assembly);
+void EOR(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("EOR %s\n", cpu.instruction);
+    cpu.instruction = "EOR";
     cpu.a = cpu.a ^ *byte;
     SET_ZERO_FLAG(cpu.a)
     SET_NEG_FLAG(cpu.a)
 }
 
-void ADC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
+void ADC(uint8_t *byte, uint16_t *addr, bool immediate) {
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
-    printf("ADC %s\n", assembly);
+    //printf("ADC %s\n", cpu.instruction);
+    cpu.instruction = "ADC";
     SET_CARRY_FLAG(cpu.a, *byte, carryBit)
     SET_OVERFLOW_FLAG(cpu.a, *byte, carryBit)
     cpu.a = cpu.a + *byte + carryBit;
@@ -168,26 +148,31 @@ void ADC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
     SET_NEG_FLAG(cpu.a)
 }
 
-void LDA(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("LDA %s\n", assembly);
+void LDA(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("LDA %s\n", cpu.instruction);
+    cpu.instruction = "LDA";
     cpu.a = *byte;
     SET_ZERO_FLAG(cpu.a)
     SET_NEG_FLAG(cpu.a)
 }
 
-void STA(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("STA %s\n", assembly);
-    if (!immediate) // If not STA #i which is NOP
+void STA(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("STA %s\n", cpu.instruction);
+    cpu.instruction = "STA";
+    if (!immediate) {// If not STA #i which is NOP
         cpu_write(*addr, &cpu.a);
+    }
 }
 
-void CMP(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("CMP %s\n", assembly);
+void CMP(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("CMP %s\n", cpu.instruction);
+    cpu.instruction = "CMP";
     compare(&cpu.a, byte);
 }
 
-void SBC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("SBC %s\n", assembly);
+void SBC(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("SBC %s\n", cpu.instruction);
+    cpu.instruction = "SBC";
     uint16_t borrowBit = ((cpu.status & carry) > 0) ? 0 : 1;
     SET_CARRY_FLAG(cpu.a, -1 * (uint16_t) *byte, -1 * borrowBit)
     SET_OVERFLOW_FLAG(cpu.a, -1 * (uint16_t) *byte, -1 * borrowBit) // Jank see if it works
@@ -199,8 +184,9 @@ void SBC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
 
 
 /*RMW Instructions*/
-void ASL(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("ASL %s\n", assembly);
+void ASL(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("ASL %s\n", cpu.instruction);
+    cpu.instruction = "ASL";
     SET_CARRY_FLAG(*byte, 0, 0)
     *byte = *byte << 1;
     SET_ZERO_FLAG(*byte)
@@ -211,8 +197,9 @@ void ASL(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
         cpu_write(*addr, byte);
 }
 
-void LSR(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("LSR %s\n", assembly);
+void LSR(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("LSR %s\n", cpu.instruction);
+    cpu.instruction = "LSR";
     SET_CARRY_FLAG(*byte, 0, 0)
     *byte = *byte >> 1;
     SET_ZERO_FLAG(*byte)
@@ -223,8 +210,9 @@ void LSR(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
         cpu_write(*addr, byte);
 }
 
-void ROL(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("ROL %s\n", assembly);
+void ROL(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("ROL %s\n", cpu.instruction);
+    cpu.instruction = "ROL";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
     SET_CARRY_FLAG(*byte, 0, 0)
     *byte = (*byte << 1) | carryBit;
@@ -236,8 +224,9 @@ void ROL(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
         cpu_write(*addr, byte);
 }
 
-void ROR(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
-    printf("ROR %s\n", assembly);
+void ROR(uint8_t *byte, uint16_t *addr, bool immediate) {
+    //printf("ROR %s\n", cpu.instruction);
+    cpu.instruction = "ROR";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
     SET_CARRY_FLAG(*byte, 0, 0)
     *byte = (*byte >> 1) | (carryBit << 7);
@@ -249,35 +238,41 @@ void ROR(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
         cpu_write(*addr, byte);
 }
 
-void STX(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
+void STX(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
-        printf("TXA\n");
+        //printf("TXA\n");
+        cpu.instruction = "TXA";
         cpu.a = cpu.x;
         SET_ZERO_FLAG(cpu.a)
         SET_NEG_FLAG(cpu.a)
     } else {
-        printf("STX %s\n", assembly);
+        cpu.instruction = "STX";
+        //printf("STX %s\n", cpu.instruction);
         cpu_write(*addr, &cpu.x);
     }
 }
 
-void LDX(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
+void LDX(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
-        printf("TAX\n");
+        cpu.instruction = "TAX";
+        //printf("TAX\n");
         cpu.x = cpu.a;
     } else {
-        printf("LDX %s\n", assembly);
+        cpu.instruction = "LDX";
+        //printf("LDX %s\n", cpu.instruction);
         cpu.x = *byte;
     }
     SET_ZERO_FLAG(cpu.x)
     SET_NEG_FLAG(cpu.x)
 }
 
-void INC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
+void INC(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
-        printf("NOP impl\n");
+        cpu.instruction = "NOP";
+        //printf("NOP impl\n");
     } else {
-        printf("INC %s\n", assembly);
+        cpu.instruction = "INC";
+        //printf("INC %s\n", cpu.instruction);
         (*byte)++;
         SET_ZERO_FLAG(*byte)
         SET_NEG_FLAG(*byte)
@@ -285,29 +280,29 @@ void INC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
     }
 }
 
-void DEC(uint8_t *byte, char *assembly, uint16_t *addr, bool immediate) {
+void DEC(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
-        printf("DEX\n");
+        cpu.instruction = "DEX";
+        //printf("DEX\n");
         cpu.x--;
     } else {
-        printf("DEC %s\n", assembly);
+        cpu.instruction = "DEC";
+        //printf("DEC %s\n", cpu.instruction);
         (*byte)--;
+        cpu_write(*addr, byte);
     }
     SET_ZERO_FLAG(*byte)
     SET_NEG_FLAG(*byte)
-    cpu_write(*addr, byte);
 }
 
 /* Will isolate Control assembly instructions */
-void handleControl(uint8_t opcode) {
-    uint8_t high = 0;
-    uint8_t low = 0;
+void handleControl() {
     uint16_t addr;
     uint8_t byte;
     char *assembly = NULL;
-    void (*func)(uint8_t *, char *, uint16_t *, bool);
+    void (*func)(uint8_t *, uint16_t *, bool);
 
-    switch (opcode) {
+    switch (cpu.opcode) {
         case 0x00: // BRK impl
 
         break;
@@ -433,13 +428,13 @@ void handleControl(uint8_t opcode) {
         break;
     }
 
-    switch (opcode % 0x20) {
+    switch (cpu.opcode % 0x20) {
         case 0x00: // impl, abs, #
 
         break;
 
         case 0x04: // zeropage
-        byte = zeropage(&low, &high, &addr, 0);
+        byte = zeropage(&addr, 0);
         break;
 
         case 0x08: // impl
@@ -447,7 +442,7 @@ void handleControl(uint8_t opcode) {
         break;
 
         case 0x0C: // abs
-        byte = absolute(&low, &high, &addr, 0);
+        byte = absolute(&addr, 0);
         break;
 
         case 0x10: // rel
@@ -455,7 +450,7 @@ void handleControl(uint8_t opcode) {
         break;
 
         case 0x14: // zeropage, X
-        byte = zeropage(&low, &high, &addr, cpu.x);
+        byte = zeropage(&addr, cpu.x);
         break;
 
         case 0x18: // impl
@@ -463,244 +458,237 @@ void handleControl(uint8_t opcode) {
         break;
 
         case 0x1C: // absolute, X
-        byte = absolute(&low, &high, &addr, cpu.x);
+        byte = absolute(&addr, cpu.x);
         break;
 
         default:
-            printf("Broken Instruction 0x%x\n", opcode);
+            printf("Broken Instruction 0x%x\n", cpu.opcode);
             cpu.fail();
         break;
     }
 }
 
 /* Will isolate ALU assembly instructions */
-void handleALU(uint8_t opcode) {
-    uint8_t high = 0;
-    uint8_t low = 0;
+void handleALU() {
     uint16_t addr;
     uint8_t byte;
     char *assembly = NULL;
-    void (*func)(uint8_t *, char *, uint16_t *, bool);
+    void (*func)(uint8_t *, uint16_t *, bool);
 
-    if (opcode < 0x20) // ORA
+    if (cpu.opcode < 0x20) // ORA
         func = &ORA;
-    else if (opcode < 0x40) // AND
+    else if (cpu.opcode < 0x40) // AND
         func = &AND;
-    else if (opcode < 0x60) // EOR
+    else if (cpu.opcode < 0x60) // EOR
         func = &EOR;
-    else if (opcode < 0x80) // ADC
+    else if (cpu.opcode < 0x80) // ADC
         func = &ADC;
-    else if (opcode < 0xA0) // STA
+    else if (cpu.opcode < 0xA0) // STA
         func = &STA;
-    else if (opcode < 0xC0) // LDA
+    else if (cpu.opcode < 0xC0) // LDA
         func = &LDA;
-    else if (opcode < 0xE0) // CMP
+    else if (cpu.opcode < 0xE0) // CMP
         func = &CMP;
     else
         func = &SBC;
 
-    switch(opcode % 0x20) {
+    switch(cpu.opcode % 0x20) {
         case 0x01: // (indirect, X)
+        //cpu.pc++;
+        READ_BYTE_FROM_ADDR(cpu.pc + cpu.x, cpu.low)
+        READ_BYTE_FROM_ADDR(cpu.pc + cpu.x + 1, cpu.high)
+        SET_ADDR(addr, 0)
+        READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
-        if (!cpu_read((cpu.pc + cpu.x), &low)) {
-            printf("Could not read addr\n");
-            cpu.fail();
-        }
-        if (!cpu_read((cpu.pc + cpu.x + 1), &high)) {
-            printf("Could not read addr\n");
-            cpu.fail();
-        }
-        addr = (((uint16_t) high) << 8) | (uint16_t) low;
-        if (!cpu_read(addr, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        assembly = "(d,x)";
+        sprintf(cpu.asm_args, "($%X,x)", cpu.low);
+        //assembly = "(d,x)";
         cpu.cycles += 6;
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x05: // zeropage
-        byte = zeropage(&low, &high, &addr, 0);
-        assembly = "d";
+        byte = zeropage(&addr, 0);
+        sprintf(cpu.asm_args, "$%X", cpu.low);
+        //assembly = "d";
         cpu.cycles += 3;
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x09: // immediate
         byte = immediate(assembly);
-        func(&byte, assembly, &addr, true);
+        func(&byte, &addr, true);
         break;
 
         case 0x0D: // absolute
-        byte = absolute(&low, &high, &addr, 0);
-        assembly = "a";
+        byte = absolute(&addr, 0);
+        sprintf(cpu.asm_args, "$%X%X", cpu.high, cpu.low);
+        //assembly = "a";
         cpu.cycles += 4;
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x11: // (indirect), Y
+        //cpu.pc++;
+        READ_WORD(cpu.pc)
+        SET_ADDR(addr, cpu.y)
+        READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
-        if (!cpu_read(cpu.pc, &low)) {
-            printf("Could not read addr\n");
-            cpu.fail();
-        }
-        if (!cpu_read(cpu.pc + 1, &high)) {
-            printf("Could not read addr\n");
-            cpu.fail();
-        }
-        addr = (((uint16_t) high) << 8) | (uint16_t) low + cpu.y;
-        if (!cpu_read(addr, &byte)) {
-            printf("Could not read byte\n");
-            cpu.fail();
-        }
-        cpu.pc++;
-        assembly = "(d),y"; // STA always does 6 cycles
-        cpu.cycles += ((((uint16_t) low + cpu.y) <= 0xFF) && func != &STA) ? 5 : 6; // add 1 to cycles if page boundary is crossed
-        func(&byte, assembly, &addr, false);
+        sprintf(cpu.asm_args, "($%X),y", cpu.low);
+        //assembly = "(d),y"; // STA always does 6 cycles
+        cpu.cycles += ((((uint16_t) cpu.low + cpu.y) <= 0xFF) && func != &STA) ? 5 : 6; // add 1 to cycles if page boundary is crossed
+        func(&byte, &addr, false);
         break;
 
         case 0x15: // zeropage, X
-        byte = zeropage(&low, &high, &addr, cpu.x);
-        assembly = "d,x";
+        byte = zeropage(&addr, cpu.x);
+        sprintf(cpu.asm_args, "$%X,x", cpu.low);
+        //assembly = "d,x";
         cpu.cycles += 4;
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x19: // absolute, Y
-        byte = absolute(&low, &high, &addr, cpu.y);
-        assembly = "a,y"; // // STA always does 5 cycles
+        byte = absolute(&addr, cpu.y);
+        sprintf(cpu.asm_args, "$%X%X,y", cpu.high, cpu.low);
+        //assembly = "a,y"; // // STA always does 5 cycles
         cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.y) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x1D: // absolute, X
-        byte = absolute(&low, &high, &addr, cpu.x); // STA always does 5 cycles
+        byte = absolute(&addr, cpu.x); // STA always does 5 cycles
         cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.x) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
-        assembly = "a,x";
-        func(&byte, assembly, &addr, false);
+        sprintf(cpu.asm_args, "$%X%X,x", cpu.high, cpu.low);
+        //assembly = "a,x";
+        func(&byte, &addr, false);
         break;
         
         default:
-            printf("Broken Instruction 0x%x\n", opcode);
-            cpu.fail();
+        printf("Broken Instruction 0x%x\n", cpu.opcode);
+        cpu.fail();
         break;
     }
 }
 
 /* Will isolate RMW assembly instructions */
-void handleRMW(uint8_t opcode) {
-    uint8_t high = 0;
-    uint8_t low = 0;
+void handleRMW() {
+    cpu.low = 0;
+    cpu.high = 0;
     uint16_t addr;
     uint8_t byte;
     char *assembly = NULL;
-    void (*func)(uint8_t *, char *, uint16_t *, bool);
-    if (opcode < 0x20) // ASL
+    void (*func)(uint8_t *, uint16_t *, bool);
+    if (cpu.opcode < 0x20) // ASL
         func = &ASL;
-    else if (opcode < 0x40) // ROL
+    else if (cpu.opcode < 0x40) // ROL
         func = &ROL;
-    else if (opcode < 0x60) // LSR
+    else if (cpu.opcode < 0x60) // LSR
         func = &LSR;
-    else if (opcode < 0x80) // ROR
+    else if (cpu.opcode < 0x80) // ROR
         func = &ROR;
-    else if (opcode < 0xA0) // STX
+    else if (cpu.opcode < 0xA0) // STX
         func = &STX;
-    else if (opcode < 0xC0) // LDX
+    else if (cpu.opcode < 0xC0) // LDX
         func = &LDX;
-    else if (opcode < 0xE0) // DEC
+    else if (cpu.opcode < 0xE0) // DEC
         func = &DEC;
     else // INC
         func = &INC;
-   switch (opcode % 0x20) {
+   switch (cpu.opcode % 0x20) {
         case 0x02: // immediate #i Only works on LDX
-        if (opcode == 0xA2) {
+        if (cpu.opcode == 0xA2) {
             uint8_t byte = immediate(assembly);
-            LDX(&byte, "#i", 0, false);
+            sprintf(cpu.asm_args, "#%X", byte);
+            LDX(&byte, 0, false);
         } else {
-            printf("Broken Instruction 0x%x\n", opcode);
+            printf("Broken Instruction 0x%x\n", cpu.opcode);
             cpu.fail();
         }
         break;
         
         case 0x06: // zeropage
-        byte = zeropage(&low, &high, &addr, 0);
-        assembly = "d";
+        byte = zeropage(&addr, 0);
+        sprintf(cpu.asm_args, "$%X", cpu.low);
+        //assembly = "d";
         cpu.cycles += (func == &LDX) ? 3 : 5; // LDX is only 3 cycles
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x0A: // Works on registers
         cpu.cycles += 2;
-        if (opcode < 0x80)
-            assembly = "A";
+        if (cpu.opcode < 0x80)
+            cpu.asm_args = "A";
         else
-            assembly = "impl";
-        func(&byte, assembly, &addr, true);
+            cpu.asm_args = "impl";
+        func(&byte, &addr, true);
         break;
 
         case 0x0E: // absolute
-        byte = absolute(&low, &high, &addr, 0);
-        assembly = "a";
+        byte = absolute(&addr, 0);
+        sprintf(cpu.asm_args, "$%X%X", cpu.high, cpu.low);
+        //assembly = "a";
         cpu.cycles += (func == &LDX || func == &STX) ? 4 : 6; // LDX and STX are only 4 cycles
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x12: // Fail
-        printf("Broken Instruction 0x%x\n", opcode);
+        printf("Broken Instruction 0x%x\n", cpu.opcode);
         cpu.fail();
         break;
 
         case 0x16: // zeropage, X or Y
-        if (opcode == 0x96 || opcode == 0xB6) { // STX and LDX use zeropage, Y
-            byte = zeropage(&low, &high, &addr, cpu.y);
-            assembly = "d,y";
+        if (cpu.opcode == 0x96 || cpu.opcode == 0xB6) { // STX and LDX use zeropage, Y
+            byte = zeropage(&addr, cpu.y);
+            sprintf(cpu.asm_args, "$%X,y", cpu.low);
+            //assembly = "d,y";
         } else {
-            byte = zeropage(&low, &high, &addr, cpu.x);
-            assembly = "d,x";
+            byte = zeropage(&addr, cpu.x);
+            sprintf(cpu.asm_args, "$%X,x", cpu.low);
+            //assembly = "d,x";
         }
         cpu.cycles += (func == &LDX || func == &STX) ? 4 : 6; // LDX and STX are only 4 cycles
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
 
         case 0x1A: // impl
         // Only TXS and TSX
-        if (opcode == 0x9A) { 
+        if (cpu.opcode == 0x9A) { 
             // TXS
             cpu.pc++;
-            printf("TSX\n");
+            //printf("TSX\n");
             cpu.x = cpu.sp;
             cpu.cycles += 2;
             
-        } else if (opcode == 0xBA) {
+        } else if (cpu.opcode == 0xBA) {
             // TSX
             cpu.pc++;
-            printf("TSX\n");
+            //printf("TSX\n");
             cpu.sp = cpu.x;
             cpu.cycles += 2;
         } else {
-            printf("Broken Instruction 0x%x\n", opcode);
+            printf("Broken Instruction 0x%x\n", cpu.opcode);
             cpu.fail();
         }
         break;
 
         case 0x1E: // absolute, X or absolute, Y
         // Need to figure out how many cycles
-        if (opcode == 0xBE) {// LDX uses absolute, Y
-            byte = absolute(&low, &high, &addr, cpu.y);
+        if (cpu.opcode == 0xBE) {// LDX uses absolute, Y
+            byte = absolute(&addr, cpu.y);
             cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.y)) ? 4 : 5;
-            assembly = "a,y";
+            sprintf(cpu.asm_args, "$%X%X,y", cpu.high, cpu.low);
+            //assembly = "a,y";
         } else {
-            byte = absolute(&low, &high, &addr, cpu.x);
+            byte = absolute(&addr, cpu.x);
             cpu.cycles += 7;
-            assembly = "a,x";
+            sprintf(cpu.asm_args, "$%X%X,x", cpu.high, cpu.low);
+            //assembly = "a,x";
         }
-        func(&byte, assembly, &addr, false);
+        func(&byte, &addr, false);
         break;
         
         default:
-            printf("Broken Instruction 0x%x\n", opcode);
+            printf("Broken Instruction 0x%x\n", cpu.opcode);
             cpu.fail();
         break;
    }

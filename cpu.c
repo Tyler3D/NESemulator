@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "rom.h"
 #include "cpu.h"
+#include "logger.h"
 
 /*
     NES CPU memory map
@@ -101,27 +102,26 @@ void cpu_clock() {
         We split opcodes into groups so we can generalize instructions and avoid
         rewriting code
     */
-    uint8_t opcode;
-    if (!cpu_read(cpu.pc, &opcode)) {
-        printf("Could not read opcode\n");
-        cpu.fail();
-    }
+    READ_BYTE_PC(cpu.opcode);
+    cpu.high = 0;
+    cpu.low = 0;
 
-    if ((opcode % 4) == 0) {
+    if ((cpu.opcode % 4) == 0) {
         // Control instructions
-        printf("handle Control 0x%x\n", opcode);
-        handleControl(opcode);
-    } else if ((opcode % 4) == 1) {
+        printf("handle Control 0x%x\n", cpu.opcode);
+        handleControl();
+    } else if ((cpu.opcode % 4) == 1) {
         // ALU instructions
-        printf("handle ALU 0x%x\n", opcode);
-        handleALU(opcode);
-    } else if ((opcode % 4) == 2) {
+        printf("handle ALU 0x%x\n", cpu.opcode);
+        handleALU();
+    } else if ((cpu.opcode % 4) == 2) {
         // RMW operations
-        printf("handle RMW 0x%x\n", opcode);
-        handleRMW(opcode);
+        printf("handle RMW 0x%x\n", cpu.opcode);
+        handleRMW();
     } else {
         // Illegal instructions
         printf("Illegal instruction\n");
         cpu.fail();
     }
+    log_state();
 }
