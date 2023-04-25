@@ -56,6 +56,7 @@ uint8_t zeropage(uint16_t *addr, uint8_t offset) {
     SET_ADDR(*addr, 0)
     READ_BYTE_FROM_ADDR(*addr, byte)
     cpu.pc++;
+    cpu.asm_argc = 2;
     return byte;
 }
 
@@ -81,6 +82,7 @@ uint8_t absolute(uint16_t *addr, uint8_t offset) {
     READ_BYTE_PC(cpu.high)
     SET_ADDR(*addr, offset)
     READ_BYTE_FROM_ADDR(*addr, byte)
+    cpu.asm_argc = 3;
     return byte;
 }
 
@@ -90,12 +92,13 @@ From what I can tell all of these ops use 2 cycles
 So cycles is modified here
 */
 
-uint8_t immediate(char *assembly) {
+uint8_t immediate() {
     uint8_t byte;
     READ_BYTE_PC(byte)
     sprintf(cpu.asm_args, "#%X", byte);
     //assembly = "#i";
     cpu.cycles += 2;
+    cpu.asm_argc = 2;
     return byte;
 }
 
@@ -243,6 +246,7 @@ void STX(uint8_t *byte, uint16_t *addr, bool immediate) {
         //printf("TXA\n");
         cpu.instruction = "TXA";
         cpu.a = cpu.x;
+        cpu.asm_argc = 1;
         SET_ZERO_FLAG(cpu.a)
         SET_NEG_FLAG(cpu.a)
     } else {
@@ -256,6 +260,7 @@ void LDX(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
         cpu.instruction = "TAX";
         //printf("TAX\n");
+        cpu.asm_argc = 1;
         cpu.x = cpu.a;
     } else {
         cpu.instruction = "LDX";
@@ -269,6 +274,7 @@ void LDX(uint8_t *byte, uint16_t *addr, bool immediate) {
 void INC(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
         cpu.instruction = "NOP";
+        cpu.asm_argc = 1;
         //printf("NOP impl\n");
     } else {
         cpu.instruction = "INC";
@@ -283,6 +289,7 @@ void INC(uint8_t *byte, uint16_t *addr, bool immediate) {
 void DEC(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
         cpu.instruction = "DEX";
+        cpu.asm_argc = 1;
         //printf("DEX\n");
         cpu.x--;
     } else {
@@ -299,7 +306,6 @@ void DEC(uint8_t *byte, uint16_t *addr, bool immediate) {
 void handleControl() {
     uint16_t addr;
     uint8_t byte;
-    char *assembly = NULL;
     void (*func)(uint8_t *, uint16_t *, bool);
 
     switch (cpu.opcode) {
@@ -472,7 +478,6 @@ void handleControl() {
 void handleALU() {
     uint16_t addr;
     uint8_t byte;
-    char *assembly = NULL;
     void (*func)(uint8_t *, uint16_t *, bool);
 
     if (cpu.opcode < 0x20) // ORA
@@ -502,6 +507,7 @@ void handleALU() {
         cpu.pc++;
         sprintf(cpu.asm_args, "($%X,x)", cpu.low);
         //assembly = "(d,x)";
+        cpu.asm_argc = 2;
         cpu.cycles += 6;
         func(&byte, &addr, false);
         break;
@@ -515,7 +521,7 @@ void handleALU() {
         break;
 
         case 0x09: // immediate
-        byte = immediate(assembly);
+        byte = immediate();
         func(&byte, &addr, true);
         break;
 
@@ -534,6 +540,7 @@ void handleALU() {
         READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
         sprintf(cpu.asm_args, "($%X),y", cpu.low);
+        cpu.asm_argc = 3;
         //assembly = "(d),y"; // STA always does 6 cycles
         cpu.cycles += ((((uint16_t) cpu.low + cpu.y) <= 0xFF) && func != &STA) ? 5 : 6; // add 1 to cycles if page boundary is crossed
         func(&byte, &addr, false);
@@ -576,7 +583,6 @@ void handleRMW() {
     cpu.high = 0;
     uint16_t addr;
     uint8_t byte;
-    char *assembly = NULL;
     void (*func)(uint8_t *, uint16_t *, bool);
     if (cpu.opcode < 0x20) // ASL
         func = &ASL;
@@ -597,9 +603,10 @@ void handleRMW() {
    switch (cpu.opcode % 0x20) {
         case 0x02: // immediate #i Only works on LDX
         if (cpu.opcode == 0xA2) {
-            uint8_t byte = immediate(assembly);
+            uint8_t byte = immediate();
             sprintf(cpu.asm_args, "#%X", byte);
             LDX(&byte, 0, false);
+            cpu.asm_argc = 2;
         } else {
             printf("Broken Instruction 0x%x\n", cpu.opcode);
             cpu.fail();
@@ -620,6 +627,7 @@ void handleRMW() {
             cpu.asm_args = "A";
         else
             cpu.asm_args = "impl";
+        cpu.asm_argc = 1;
         func(&byte, &addr, true);
         break;
 
@@ -655,7 +663,8 @@ void handleRMW() {
         if (cpu.opcode == 0x9A) { 
             // TXS
             cpu.pc++;
-            //printf("TSX\n");
+            //printf("TXS\n");
+            cpu.instruction = "TXS";
             cpu.x = cpu.sp;
             cpu.cycles += 2;
             
@@ -663,12 +672,14 @@ void handleRMW() {
             // TSX
             cpu.pc++;
             //printf("TSX\n");
+            cpu.instruction = "TSX";
             cpu.sp = cpu.x;
             cpu.cycles += 2;
         } else {
             printf("Broken Instruction 0x%x\n", cpu.opcode);
             cpu.fail();
         }
+        cpu.asm_argc = 1;
         break;
 
         case 0x1E: // absolute, X or absolute, Y
@@ -684,6 +695,7 @@ void handleRMW() {
             sprintf(cpu.asm_args, "$%X%X,x", cpu.high, cpu.low);
             //assembly = "a,x";
         }
+        cpu.asm_argc = 3;
         func(&byte, &addr, false);
         break;
         

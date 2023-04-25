@@ -7,7 +7,7 @@ bool log_init() {
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char buf[512];
-    sprintf(buf, "%d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    sprintf(buf, "%d-%02d-%02d %02d:%02d:%02d.txt", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
     logfp = fopen(buf, "w+");
     if (!logfp)
         return false;
@@ -17,9 +17,6 @@ bool log_init() {
 /*
 Simple logger to keep track of emulator state
 Usage: 
-log_state(3, instruction, asm_args)
-log_state(2, instruction, asm_args)
-log_state(1, instruction, asm_args)
 
 Will produce output like this
 C000  4C F5 C5  JMP $C5F5                             A:FF X:0  Y:0  Status:24 SP:FD CYC: 7
