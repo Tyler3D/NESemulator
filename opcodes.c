@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "rom.h"
 #include "cpu.h"
+#include "logger.h" // Debugging
 
 /*
 According to this source: https://www.masswerk.at/6502/6502_instruction_set.html
@@ -93,6 +94,8 @@ So cycles is modified here
 
 uint8_t immediate() {
     uint8_t byte;
+    printf("Working on reading byte \n");
+    log_state();
     READ_BYTE_PC(byte)
     sprintf(cpu.asm_args, "#%X", byte);
     //assembly = "#i";
@@ -920,10 +923,6 @@ void handleRMW() {
 
         case 0x0A: // Works on registers
         cpu.cycles += 2;
-        if (cpu.opcode < 0x80)
-            cpu.asm_args = "A";
-        else
-            cpu.asm_args = "impl";
         cpu.asm_argc = 1;
         func(&byte, &addr, true);
         break;

@@ -12,6 +12,7 @@ void fail() {
     if (rom.CHR_ROM_SIZE > 0)
         free(rom.CHR_ROM_data);
     free(rom.PRG_ROM_data);
+    free(cpu.asm_args);
     fclose(logfp);
     fclose(fp);
     exit(1);

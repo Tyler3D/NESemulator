@@ -4,6 +4,7 @@
 #include <string.h>
 
 bool log_init() {
+    return true;
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     char buf[512];
@@ -44,7 +45,7 @@ void log_state() {
         cpu.fail();
         break;
     }
-    fwrite(buf, sizeof(char), strnlen(buf, 128), logfp);
+    //fwrite(buf, sizeof(char), strnlen(buf, 128), logfp);
     fwrite(buf, sizeof(char), strnlen(buf, 128), stdout);
 }
 

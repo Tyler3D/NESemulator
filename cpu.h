@@ -2,6 +2,8 @@
 #define _CPU_H
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h> // Debugging
+
 #define SET_ZERO_FLAG(X) {\
     if (!(X))\
         cpu.status |= zero;\

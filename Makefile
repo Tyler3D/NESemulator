@@ -3,7 +3,7 @@ CFLAGS = -Wall
 OBJECTS = nes.o rom.o cpu.o opcodes.o logger.o
 
 nes : $(OBJECTS)
-	cc $(CFLAGS) -o nes_emu $(OBJECTS)
+	cc -Wall -g $(CFLAGS) -o nes_emu $(OBJECTS)
 
 nes.o : nes.c rom.h cpu.h
 cpu.o : cpu.c cpu.h rom.h

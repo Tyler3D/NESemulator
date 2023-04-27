@@ -22,6 +22,7 @@
 // False if out of bounds
 bool cpu_read(uint16_t addr, uint8_t *data) {
     uint32_t mapped_addr;
+    printf("Attempting to read %X\n", addr);
     if (addr >= 0x0000 && addr <= 0x1FFF) {
         *data = cpu.memory[addr & 0x07FF]; // Reading from RAM
     } else if (addr >= 0x2000 && addr <= 0x3FFF) {
@@ -37,6 +38,7 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
         *data = rom.PRG_ROM_data[mapped_addr];
     } else
         return false;
+    printf("Read data %X\n", *data);
     return true;
 }
 
@@ -86,6 +88,7 @@ void cpu_reset() {
     cpu.cycles = 0;
 
 	// Reset registers
+    cpu.asm_args = (char *) malloc(128 * sizeof(char));
 	cpu.a = 0;
 	cpu.x = 0;
 	cpu.y = 0;
