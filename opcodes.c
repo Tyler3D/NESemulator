@@ -95,6 +95,7 @@ So cycles is modified here
 uint8_t immediate() {
     uint8_t byte;
     READ_BYTE_PC(byte)
+    cpu.low = byte;
     sprintf(cpu.asm_args, "#%02X", byte);
     //assembly = "#i";
     cpu.cycles += 2;
@@ -104,7 +105,7 @@ uint8_t immediate() {
 
 void compare(uint8_t *first, uint8_t *second ) {
     uint8_t result = *first - *second;
-    SET_CARRY_FLAG(*first, -1 * (uint16_t) *second, 0)
+    SET_CARRY_FLAG(*first >= *second)
     SET_ZERO_FLAG(result)
     SET_NEG_FLAG(result)
 }
@@ -114,7 +115,7 @@ void push(uint8_t *byte) {
         printf("Stack Overflow!\n");
         cpu.fail();
     }
-    cpu_write(cpu.sp, byte);
+    cpu_write((0x100 + (uint16_t) cpu.sp), byte);
     cpu.sp--;
 }
 
@@ -124,7 +125,7 @@ void pull(uint8_t *byte) {
         cpu.fail();
     }
     cpu.sp++;
-    cpu_read(cpu.sp, byte);
+    cpu_read(0x100 + ((uint16_t) cpu.sp), byte);
 }
 
 /* Control Instructions */
@@ -231,7 +232,6 @@ void column0x04(uint8_t *byte) {
         the zero-flag is set to the result of operand AND accumulator.
         */
         cpu.instruction = "BIT";
-        cpu.cycles += 3;
         if (((*byte) & overflow) > 0)
             cpu.status |= overflow;
         else
@@ -255,7 +255,6 @@ void column0x04(uint8_t *byte) {
 
         case 0xA4: // LDY
         cpu.instruction = "LDY";
-        cpu.cycles += 3;
         cpu.y = *byte;
         SET_NEG_FLAG(cpu.y)
         SET_ZERO_FLAG(cpu.y)
@@ -264,14 +263,12 @@ void column0x04(uint8_t *byte) {
 
         case 0xC4: // CPY
         cpu.instruction = "CPY";
-        cpu.cycles += 3;
         compare(&cpu.y, byte);
         sprintf(cpu.asm_args, "$%02X", cpu.low);
         break;
         
         case 0xE4: // CPX
         cpu.instruction = "CPX";
-        cpu.cycles += 3;
         compare(&cpu.x, byte);
         sprintf(cpu.asm_args, "$%02X", cpu.low);
         break;
@@ -568,11 +565,13 @@ void EOR(uint8_t *byte, uint16_t *addr, bool immediate) {
 
 void ADC(uint8_t *byte, uint16_t *addr, bool immediate) {
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
+    uint16_t result = (uint16_t) cpu.a + (uint16_t) *byte + carryBit;
     //printf("ADC %s\n", cpu.instruction);
     cpu.instruction = "ADC";
-    SET_CARRY_FLAG(cpu.a, *byte, carryBit)
+    SET_CARRY_FLAG((uint16_t) cpu.a + (uint16_t) *byte + (uint16_t) carryBit > 0xFF)
+    //SET_CARRY_FLAG(cpu.a, *byte, carryBit)
     SET_OVERFLOW_FLAG(cpu.a, *byte, carryBit)
-    cpu.a = cpu.a + *byte + carryBit;
+    cpu.a = result & 0xFF;
     SET_ZERO_FLAG(cpu.a)
     SET_NEG_FLAG(cpu.a)
 }
@@ -603,10 +602,14 @@ void SBC(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("SBC %s\n", cpu.instruction);
     cpu.instruction = "SBC";
     uint16_t borrowBit = ((cpu.status & carry) > 0) ? 0 : 1;
-    SET_CARRY_FLAG(cpu.a, -1 * (uint16_t) *byte, -1 * borrowBit)
-    SET_OVERFLOW_FLAG(cpu.a, -1 * (uint16_t) *byte, -1 * borrowBit) // Jank see if it works
-
-    cpu.a = cpu.a - *byte - borrowBit;
+    uint16_t result = (uint16_t) cpu.a - *byte - borrowBit;
+    printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
+    SET_CARRY_FLAG(((uint16_t) cpu.a >= borrowBit + *byte))
+    //SET_CARRY_FLAG((result & 0xFF00) > 0)
+    //SET_CARRY_FLAG(cpu.a, *byte, carryBit)
+    SET_OVERFLOW_FLAG(cpu.a, -1 * *byte, -1 * borrowBit)
+    printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
+    cpu.a = result & 0xFF;
     SET_ZERO_FLAG(cpu.a)
     SET_NEG_FLAG(cpu.a)
 }
@@ -616,7 +619,7 @@ void SBC(uint8_t *byte, uint16_t *addr, bool immediate) {
 void ASL(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("ASL %s\n", cpu.instruction);
     cpu.instruction = "ASL";
-    SET_CARRY_FLAG(*byte, 0, 0)
+    SET_CARRY_FLAG((*byte & 0x80) > 0)
     *byte = *byte << 1;
     SET_ZERO_FLAG(*byte)
     SET_NEG_FLAG(*byte)
@@ -629,7 +632,7 @@ void ASL(uint8_t *byte, uint16_t *addr, bool immediate) {
 void LSR(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("LSR %s\n", cpu.instruction);
     cpu.instruction = "LSR";
-    SET_CARRY_FLAG(*byte, 0, 0)
+    SET_CARRY_FLAG(*byte & 0x01)
     *byte = *byte >> 1;
     SET_ZERO_FLAG(*byte)
     SET_NEG_FLAG(*byte)
@@ -643,7 +646,7 @@ void ROL(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("ROL %s\n", cpu.instruction);
     cpu.instruction = "ROL";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
-    SET_CARRY_FLAG(*byte, 0, 0)
+    SET_CARRY_FLAG((*byte & 0x80) > 0)
     *byte = (*byte << 1) | carryBit;
     SET_ZERO_FLAG(*byte)
     SET_NEG_FLAG(*byte)
@@ -657,7 +660,8 @@ void ROR(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("ROR %s\n", cpu.instruction);
     cpu.instruction = "ROR";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
-    SET_CARRY_FLAG(*byte, 0, 0)
+    //SET_CARRY_FLAG(*byte, 0, 0)
+    SET_CARRY_FLAG(*byte & 0x01)
     *byte = (*byte >> 1) | (carryBit << 7);
     SET_ZERO_FLAG(*byte)
     SET_NEG_FLAG(*byte)
@@ -942,7 +946,7 @@ void handleRMW() {
         byte = zeropage(&addr, 0);
         sprintf(cpu.asm_args, "$%02X", cpu.low);
         //assembly = "d";
-        cpu.cycles += (func == &LDX) ? 3 : 5; // LDX is only 3 cycles
+        cpu.cycles += (func == &LDX || func == &STX) ? 3 : 5; // LDX is only 3 cycles
         func(&byte, &addr, false);
         break;
 

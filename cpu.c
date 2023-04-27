@@ -93,8 +93,9 @@ void cpu_reset() {
 	cpu.a = 0;
 	cpu.x = 0;
 	cpu.y = 0;
-	cpu.sp = (uint8_t) 0xFF; // Stack addresses 0x100-0x1ff in memory
+	cpu.sp = (uint8_t) 0xFD;//0xFF; // Stack addresses 0x100-0x1ff in memory
 	cpu.status = 0x00 |  always_on_flag | irq; // https://www.nesdev.org/wiki/Status_flags#The_B_flag
+    cpu.cycles = 0x07;
 
     // PPU Start up
     cpu.ppu_regs[2] = 0x10;//(1 << 7) | (1 << 5);
@@ -132,4 +133,5 @@ void cpu_clock() {
         cpu.fail();
     }
     log_state();
+    printf("CPU.A: %X\n", cpu.a);
 }

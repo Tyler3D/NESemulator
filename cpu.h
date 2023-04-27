@@ -11,26 +11,25 @@
         cpu.status &= ~zero;}
 
 #define SET_NEG_FLAG(X) {\
-    if ((X) > 0x7F)\
+    if (((X) & 0x80) > 0)\
         cpu.status |= negative;\
     else\
         cpu.status &= ~negative;}
 
+// https://forums.nesdev.org/viewtopic.php?t=6331
 #define SET_OVERFLOW_FLAG(X, BYTE, CARRY) {\
-    if (((X) <= 0x7F && ((uint16_t) (X) + (uint16_t) (BYTE) + (CARRY) > 0x7F)) ||\
-        ((X) > 0x7F && ((uint16_t) (X) + (uint16_t) (BYTE) + (CARRY) > 0xFF)))\
+    if (!(((X) ^ (BYTE)) & 0x80) && (((X) ^ ((X) + (BYTE) + (CARRY))) & 0x80))\
         cpu.status |= overflow;\
     else\
         cpu.status &= ~overflow;}
-// Overflow flag is wrong
 
-#define SET_CARRY_FLAG(X, BYTE, CARRY) {\
-    if (((uint16_t) (X) + (uint16_t) (BYTE) + (CARRY) > 0xFF))\
+#define SET_CARRY_FLAG(X) {\
+    if ((X))\
         cpu.status |= carry;\
     else\
         cpu.status &= ~carry;}
 
-#define GET_PAGE_NUM(X) ((X) % 0xFF)
+#define GET_PAGE_NUM(X) (((X) % 0xFF00) >> 8)
 
 #define CHECK_PAGE_BOUNDARY(ADDR, REG) ( ((uint16_t) (ADDR - REG) % 0xFF) + REG <= 0xFF ) // Check this
 
