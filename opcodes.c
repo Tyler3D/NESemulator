@@ -94,8 +94,6 @@ So cycles is modified here
 
 uint8_t immediate() {
     uint8_t byte;
-    printf("Working on reading byte \n");
-    //log_state();
     READ_BYTE_PC(byte)
     sprintf(cpu.asm_args, "#%02X", byte);
     //assembly = "#i";
