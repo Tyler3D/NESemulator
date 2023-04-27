@@ -159,8 +159,8 @@ void column0x00() {
         READ_WORD_PC()
         sprintf(cpu.asm_args, "$%02X%02X", cpu.high, cpu.low);
         uint16_t returnAddr = cpu.pc - 1;
-        uint8_t low = returnAddr & 0xFF;
-        uint8_t hi = (returnAddr >> 8) & 0xFF;
+        low = returnAddr & 0xFF;
+        hi = (returnAddr >> 8) & 0xFF;
         push(&hi);
         push(&low);
         cpu.cycles += 6;
@@ -175,9 +175,14 @@ void column0x00() {
         cpu.asm_argc = 1;
         cpu.cycles += 6;
         pull(&cpu.status);
+        pull(&low);
+        pull(&hi);
+	    cpu.status &= ~b_flag;
+	    cpu.status |= always_on_flag;
         // How to pull PC?
-        printf("RTI sorta implemented\n");
-        cpu.fail();
+        cpu.pc = (((uint16_t) hi) << 8) | low;
+        //printf("RTI sorta implemented\n");
+        //cpu.fail();
         break;
 
         case 0x60: // RTS Return from Subroutine
@@ -251,6 +256,9 @@ void column0x04(uint8_t *byte) {
         case 0x84: // STY
         // Store Index Y in Memory
         cpu.instruction = "STY";
+        // Some work around is probably needed to get address
+        // Log is mostly correct up to here
+        // Cycles are inaccurate tho
         printf("STY not implemented\n");
         cpu.fail();
         break;
@@ -625,41 +633,55 @@ void SBC(uint8_t *byte, uint16_t *addr, bool immediate) {
 void ASL(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("ASL %s\n", cpu.instruction);
     cpu.instruction = "ASL";
-    SET_CARRY_FLAG((*byte & 0x80) > 0)
-    *byte = *byte << 1;
-    SET_ZERO_FLAG(*byte)
-    SET_NEG_FLAG(*byte)
-    if (immediate)
-        cpu.a = *byte;
-    else
+    if (immediate) {
+        SET_CARRY_FLAG((cpu.a & 0x80) > 0)
+        cpu.a = cpu.a << 1;
+        SET_ZERO_FLAG(cpu.a)
+        SET_NEG_FLAG(cpu.a)
+    }
+    else {
+        SET_CARRY_FLAG((*byte & 0x80) > 0)
+        *byte = *byte << 1;
+        SET_ZERO_FLAG(*byte)
+        SET_NEG_FLAG(*byte)
         cpu_write(*addr, byte);
+    }
 }
 
 void LSR(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("LSR %s\n", cpu.instruction);
     cpu.instruction = "LSR";
-    SET_CARRY_FLAG(*byte & 0x01)
-    *byte = *byte >> 1;
-    SET_ZERO_FLAG(*byte)
-    SET_NEG_FLAG(*byte)
-    if (immediate)
-        cpu.a = *byte;
-    else
+    //SET_NEG_FLAG(*byte)
+    cpu.status &= ~negative;
+    if (immediate) {
+        SET_CARRY_FLAG((cpu.a & 0x01) > 0)
+        cpu.a = cpu.a >> 1;
+        SET_ZERO_FLAG(cpu.a)
+    } else {
         cpu_write(*addr, byte);
+        SET_CARRY_FLAG((*byte & 0x01) > 0)
+        *byte = *byte >> 1;
+        SET_ZERO_FLAG(*byte)
+    }
 }
 
 void ROL(uint8_t *byte, uint16_t *addr, bool immediate) {
     //printf("ROL %s\n", cpu.instruction);
     cpu.instruction = "ROL";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
-    SET_CARRY_FLAG((*byte & 0x80) > 0)
-    *byte = (*byte << 1) | carryBit;
-    SET_ZERO_FLAG(*byte)
-    SET_NEG_FLAG(*byte)
-    if (immediate)
-        cpu.a = *byte;
-    else
+    if (immediate) {
+        SET_CARRY_FLAG((cpu.a & 0x80) > 0)
+        cpu.a = (cpu.a << 1) | carryBit;
+        SET_ZERO_FLAG(cpu.a)
+        SET_NEG_FLAG(cpu.a)
+    }
+    else {
+        SET_CARRY_FLAG((*byte & 0x80) > 0)
+        *byte = (*byte << 1) | carryBit;
+        SET_ZERO_FLAG(*byte)
+        SET_NEG_FLAG(*byte)
         cpu_write(*addr, byte);
+    }
 }
 
 void ROR(uint8_t *byte, uint16_t *addr, bool immediate) {
@@ -667,14 +689,19 @@ void ROR(uint8_t *byte, uint16_t *addr, bool immediate) {
     cpu.instruction = "ROR";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
     //SET_CARRY_FLAG(*byte, 0, 0)
-    SET_CARRY_FLAG(*byte & 0x01)
-    *byte = (*byte >> 1) | (carryBit << 7);
-    SET_ZERO_FLAG(*byte)
-    SET_NEG_FLAG(*byte)
-    if (immediate)
-        cpu.a = *byte;
-    else
+    if (immediate) {
+        SET_CARRY_FLAG(cpu.a & 0x01)
+        cpu.a = (cpu.a >> 1) | (carryBit << 7);
+        SET_ZERO_FLAG(cpu.a)
+        SET_NEG_FLAG(cpu.a)
+    }
+    else {
+        SET_CARRY_FLAG(*byte & 0x01)
+        *byte = (*byte >> 1) | (carryBit << 7);
+        SET_ZERO_FLAG(*byte)
+        SET_NEG_FLAG(*byte)
         cpu_write(*addr, byte);
+    }
 }
 
 void STX(uint8_t *byte, uint16_t *addr, bool immediate) {
@@ -838,7 +865,10 @@ void handleALU() {
         case 0x01: // (indirect, X)
         //cpu.pc++;
         READ_BYTE_FROM_ADDR(cpu.pc + cpu.x, cpu.low)
-        READ_BYTE_FROM_ADDR(cpu.pc + cpu.x + 1, cpu.high)
+        cpu.low += cpu.x;
+        SET_ADDR(addr, 0)
+        READ_BYTE_FROM_ADDR(addr, cpu.low)
+        READ_BYTE_FROM_ADDR(addr + 1, cpu.high)
         SET_ADDR(addr, 0)
         READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
@@ -872,14 +902,21 @@ void handleALU() {
 
         case 0x11: // (indirect), Y
         //cpu.pc++;
-        READ_WORD(cpu.pc)
-        SET_ADDR(addr, cpu.y)
+        READ_BYTE_FROM_ADDR(cpu.pc + cpu.x, cpu.low)
+        SET_ADDR(addr, 0)
+        READ_BYTE_FROM_ADDR(addr, cpu.low)
+        READ_BYTE_FROM_ADDR(addr + 1, cpu.high)
+        SET_ADDR(addr, 0)
+        if ((GET_PAGE_NUM(addr) != GET_PAGE_NUM(addr + cpu.y)) || func == STA) // STA always does a lot of cycles
+            cpu.cycles += 1;
+        addr += cpu.y;
         READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
+        
         sprintf(cpu.asm_args, "($%02X),y", cpu.low);
         cpu.asm_argc = 3;
         //assembly = "(d),y"; // STA always does 6 cycles
-        cpu.cycles += ((((uint16_t) cpu.low + cpu.y) <= 0xFF) && func != &STA) ? 5 : 6; // add 1 to cycles if page boundary is crossed
+        cpu.cycles += 5;
         func(&byte, &addr, false);
         break;
 
