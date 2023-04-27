@@ -8,26 +8,26 @@
     if (!(X))\
         cpu.status |= zero;\
     else\
-        cpu.status & ~zero;}
+        cpu.status &= ~zero;}
 
 #define SET_NEG_FLAG(X) {\
     if ((X) > 0x7F)\
         cpu.status |= negative;\
     else\
-        cpu.status & ~negative;}
+        cpu.status &= ~negative;}
 
 #define SET_OVERFLOW_FLAG(X, BYTE, CARRY) {\
     if (((X) <= 0x7F && ((uint16_t) (X) + (uint16_t) (BYTE) + (CARRY) > 0x7F)) ||\
         ((X) > 0x7F && ((uint16_t) (X) + (uint16_t) (BYTE) + (CARRY) > 0xFF)))\
         cpu.status |= overflow;\
     else\
-        cpu.status & ~overflow;}
+        cpu.status &= ~overflow;}
 
 #define SET_CARRY_FLAG(X, BYTE, CARRY) {\
     if (((uint16_t) (X) + (uint16_t) (BYTE) + (CARRY) > 0xFF))\
         cpu.status |= carry;\
     else\
-        cpu.status & ~carry;}
+        cpu.status &= ~carry;}
 
 #define GET_PAGE_NUM(X) ((X) % 0xFF)
 

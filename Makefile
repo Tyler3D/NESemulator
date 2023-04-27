@@ -13,4 +13,4 @@ logger.o : logger.c logger.h
 
 .PHONY : clean
 clean :
-	rm -rf *.o nes_emu
+	rm -rf *.o nes_emu *.txt
