@@ -28,15 +28,15 @@ void log_state() {
     char buf[128];
     switch (cpu.asm_argc) {
         case 3:
-        sprintf(buf, "%-5X %-2X %-2X %-2X  %-3s %-33s A:%-2X X:%-2X Y:%-2X Status:%-2X SP:%-2X CYC: %X\n", cpu.pc - 3, \
+        sprintf(buf, "%-5X %-2X %-2X %-2X  %-3s %-33s A:%-2X X:%-2X Y:%-2X Status:%-2X SP:%-2X CYC: %X\n", cpu.logPC, \
         cpu.opcode, cpu.low, cpu.high, cpu.instruction, cpu.asm_args, cpu.a, cpu.x, cpu.y, cpu.status, cpu.sp, cpu.cycles);
         break;
         case 2:
-        sprintf(buf, "%-5X %-2X %-6X %-3s %-33s A:%-2X X:%-2X Y:%-2X Status:%-2X SP:%-2X CYC: %X\n", cpu.pc - 2, \
+        sprintf(buf, "%-5X %-2X %-6X %-3s %-33s A:%-2X X:%-2X Y:%-2X Status:%-2X SP:%-2X CYC: %X\n", cpu.logPC, \
         cpu.opcode, cpu.low, cpu.instruction, cpu.asm_args, cpu.a, cpu.x, cpu.y, cpu.status, cpu.sp, cpu.cycles);
         break;
         case 1:
-        sprintf(buf, "%-5X %-9X %-37s A:%-2X X:%-2X Y:%-2X Status:%-2X SP:%-2X CYC: %X\n", cpu.pc - 1, \
+        sprintf(buf, "%-5X %-9X %-37s A:%-2X X:%-2X Y:%-2X Status:%-2X SP:%-2X CYC: %X\n", cpu.logPC, \
         cpu.opcode, cpu.instruction, cpu.a, cpu.x, cpu.y, cpu.status, cpu.sp, cpu.cycles);
         break;
         default:

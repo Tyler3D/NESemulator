@@ -84,7 +84,8 @@ void cpu_reset() {
         printf("Could not read reset vector\n");
         cpu.fail();
     }
-	cpu.pc = (hi << 8) | lo;
+	//cpu.pc = (hi << 8) | lo;
+    cpu.pc = 0xC000;
     cpu.cycles = 0;
 
 	// Reset registers
@@ -93,7 +94,7 @@ void cpu_reset() {
 	cpu.x = 0;
 	cpu.y = 0;
 	cpu.sp = (uint8_t) 0xFF; // Stack addresses 0x100-0x1ff in memory
-	cpu.status = 0x00;// | always_on_flag; // https://www.nesdev.org/wiki/Status_flags#The_B_flag
+	cpu.status = 0x00 |  always_on_flag | irq; // https://www.nesdev.org/wiki/Status_flags#The_B_flag
 
     // PPU Start up
     cpu.ppu_regs[2] = 0x10;//(1 << 7) | (1 << 5);
@@ -108,6 +109,7 @@ void cpu_clock() {
         We split opcodes into groups so we can generalize instructions and avoid
         rewriting code
     */
+    cpu.logPC = cpu.pc;
     READ_BYTE_PC(cpu.opcode);
     cpu.high = 0;
     cpu.low = 0;

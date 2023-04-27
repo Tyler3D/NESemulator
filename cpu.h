@@ -22,6 +22,7 @@
         cpu.status |= overflow;\
     else\
         cpu.status &= ~overflow;}
+// Overflow flag is wrong
 
 #define SET_CARRY_FLAG(X, BYTE, CARRY) {\
     if (((uint16_t) (X) + (uint16_t) (BYTE) + (CARRY) > 0xFF))\
@@ -49,13 +50,13 @@
     READ_BYTE_FROM_ADDR((ADDR) + 1, cpu.high)}
 
 #define READ_WORD_PC() {\
-    READ_BYTE(cpu.low)\
-    READ_BYTE(cpu.high)}
+    READ_BYTE_PC(cpu.low)\
+    READ_BYTE_PC(cpu.high)}
 
 #define SET_ADDR(ADDR, OFFSET) (ADDR) = ((((uint16_t) cpu.high) << 8) | (uint16_t) cpu.low) + OFFSET;
 
 #define IS_FLAG_ON(flag) ((cpu.status & flag) > 0)
-#define IS_FLAG_OFF(flag) IS_FLAG_ON(~(flag))
+#define IS_FLAG_OFF(flag) ((cpu.status & flag) == 0)
 
 struct CPU {
     uint8_t x;
@@ -68,6 +69,7 @@ struct CPU {
     uint8_t ppu_regs[8];
     uint8_t apu_io_regs[0x18];
     uint32_t cycles;
+    uint16_t logPC;
     uint8_t opcode;
     uint8_t low;
     uint8_t high;

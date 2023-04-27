@@ -133,6 +133,8 @@ These instructions mostly handle interrupts and
 subroutines
 */
 void column0x00() {
+    uint8_t low;
+    uint8_t hi;
     switch (cpu.opcode) {
         case 0x00: // BRK Force Break 
         // This instruction seems rather complicated
@@ -152,14 +154,17 @@ void column0x00() {
         cpu.asm_argc = 1;
         cpu.instruction = "JSR";
         cpu.asm_argc = 3;
-        sprintf(cpu.asm_args, "$%02X%02X", cpu.high, cpu.low);
         READ_WORD_PC()
-        uint8_t returnAddr = ((uint8_t) (0xFF & cpu.pc)) - 1;
-        push(&returnAddr);
+        sprintf(cpu.asm_args, "$%02X%02X", cpu.high, cpu.low);
+        uint16_t returnAddr = cpu.pc;
+        uint8_t low = returnAddr & 0xFF;
+        uint8_t hi = (returnAddr >> 8) & 0xFF;
+        push(&hi);
+        push(&low);
         cpu.cycles += 6;
         cpu.pc = (((uint16_t) cpu.high) << 8) | cpu.low;
-        printf("JSR sorta implemented\n");
-        cpu.fail();
+        //printf("JSR sorta implemented\n");
+        //cpu.fail();
         break;
 
         case 0x40: // RTI Return from Interrupt
@@ -175,11 +180,14 @@ void column0x00() {
 
         case 0x60: // RTS Return from Subroutine
         // pull PC, PC+1 -> PC
+        pull(&low);
+        pull(&hi);
         cpu.instruction = "RTS";
         cpu.asm_argc = 1;
         cpu.cycles += 6;
-        printf("RTS unimplemented\n");
-        cpu.fail();
+        cpu.pc = (((uint16_t) hi) << 8) | low;
+        //printf("RTS unimplemented\n");
+        //cpu.fail();
         break;
 
         case 0xA0: // LDY #%X
@@ -223,8 +231,19 @@ void column0x04(uint8_t *byte) {
         the zero-flag is set to the result of operand AND accumulator.
         */
         cpu.instruction = "BIT";
-        printf("BIT not implemented\n");
-        cpu.fail();
+        cpu.cycles += 3;
+        if (((*byte) & overflow) > 0)
+            cpu.status |= overflow;
+        else
+            cpu.status &= ~overflow;
+        if (((*byte) & negative) > 0)
+            cpu.status |= negative;
+        else
+            cpu.status &= ~negative;
+        uint8_t result = cpu.a & *byte;
+        SET_ZERO_FLAG(result)
+        //printf("BIT not implemented\n");
+        //cpu.fail();
         break;
 
         case 0x84: // STY
@@ -273,13 +292,16 @@ void column0x08() {
         case 0x08: // PHP Push Processor Status on Stack
         cpu.instruction = "PHP";
         cpu.cycles += 3;
-        push(&cpu.status); // Check B_flag
+        uint8_t pushed = cpu.status | always_on_flag | b_flag; // Check
+        push(&pushed); // Check B_flag
         break;
 
         case 0x28: // PLP Pull Processor Status from Stack
         cpu.instruction = "PLP";
         cpu.cycles += 4;
         pull(&cpu.status);
+        cpu.status &= ~b_flag; // CPU ignores b_flag when pulling
+        cpu.status |= always_on_flag; // Need to have flag always on
         break;
 
         case 0x48: // PHA Push Accumulator on Stack
@@ -292,6 +314,8 @@ void column0x08() {
         cpu.instruction = "PLA";
         cpu.cycles += 4;
         pull(&cpu.a);
+        SET_ZERO_FLAG(cpu.a)
+        SET_NEG_FLAG(cpu.a)
         break;
 
         case 0x88: // DEY Decrement Index Y by One
@@ -338,8 +362,9 @@ void column0x0C(uint8_t *byte) {
         case 0x4C: // JMP abs
         cpu.instruction = "JMP";
         cpu.cycles += 3;
-        printf("JMP abs not implemented\n");
-        cpu.fail();
+        cpu.pc = (((uint16_t) cpu.high) << 8) | cpu.low;
+        //printf("JMP abs not implemented\n");
+        //cpu.fail();
         break;
 
         case 0x6C: // JMP ind
@@ -390,7 +415,7 @@ void branch() {
     READ_BYTE_PC(cpu.low)
     uint16_t targetPC = cpu.pc + ((int8_t) cpu.low);
     sprintf(cpu.asm_args, "$%02X", targetPC);
-    cpu.asm_argc = 3;
+    cpu.asm_argc = 2;
     switch (cpu.opcode) {
         case 0x10: // BPL branch on plus (negative clear)
         cpu.instruction = "BPL";
@@ -504,12 +529,12 @@ void column0x18() {
 
         case 0xD8: // CLD
         cpu.instruction = "CLD";
-        cpu.status &= ~b_flag;
+        cpu.status &= ~decimal;
         break;
         
         case 0xF8: // SED
         cpu.instruction = "SED";
-        cpu.status |= b_flag;
+        cpu.status |= decimal;
         break;
     }
 }
@@ -724,6 +749,7 @@ void handleControl() {
 
         case 0x0C: // abs
         byte = absolute(&addr, 0);
+        column0x0C(&byte);
         break;
 
         case 0x10: // rel branching
