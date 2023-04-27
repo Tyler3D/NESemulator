@@ -108,6 +108,7 @@ void compare(uint8_t *first, uint8_t *second ) {
     SET_CARRY_FLAG(*first >= *second)
     SET_ZERO_FLAG(result)
     SET_NEG_FLAG(result)
+    printf("Comparing %X and %X\n", *first, *second);
 }
 
 void push(uint8_t *byte) {
@@ -157,7 +158,7 @@ void column0x00() {
         cpu.asm_argc = 3;
         READ_WORD_PC()
         sprintf(cpu.asm_args, "$%02X%02X", cpu.high, cpu.low);
-        uint16_t returnAddr = cpu.pc;
+        uint16_t returnAddr = cpu.pc - 1;
         uint8_t low = returnAddr & 0xFF;
         uint8_t hi = (returnAddr >> 8) & 0xFF;
         push(&hi);
@@ -187,6 +188,7 @@ void column0x00() {
         cpu.asm_argc = 1;
         cpu.cycles += 6;
         cpu.pc = (((uint16_t) hi) << 8) | low;
+        cpu.pc++;
         //printf("RTS unimplemented\n");
         //cpu.fail();
         break;
@@ -318,29 +320,33 @@ void column0x08() {
         case 0x88: // DEY Decrement Index Y by One
         cpu.instruction = "DEY";
         cpu.cycles += 2;
-        printf("DEY not implemented\n");
-        cpu.fail();
+        cpu.y--;
+        SET_NEG_FLAG(cpu.y)
+        SET_ZERO_FLAG(cpu.y)
         break;
 
         case 0xA8: // TAY Transfer Accumulator to Index Y
         cpu.instruction = "TAY";
         cpu.cycles += 2;
-        printf("TAY not implemented\n");
-        cpu.fail();
+        cpu.y = cpu.a;
+        SET_NEG_FLAG(cpu.y)
+        SET_ZERO_FLAG(cpu.y)
         break;
 
         case 0xC8: // INY Increment Index Y by One
         cpu.instruction = "INY";
         cpu.cycles += 2;
-        printf("INY not implemented\n");
-        cpu.fail();
+        cpu.y++;
+        SET_NEG_FLAG(cpu.y)
+        SET_ZERO_FLAG(cpu.y)
         break;
         
         case 0xE8: // INX Increment Index X by One
         cpu.instruction = "INX";
         cpu.cycles += 2;
-        printf("INX not implemented\n");
-        cpu.fail();
+        cpu.x++;
+        SET_NEG_FLAG(cpu.x)
+        SET_ZERO_FLAG(cpu.x)
         break;
     }
 }
@@ -722,12 +728,14 @@ void DEC(uint8_t *byte, uint16_t *addr, bool immediate) {
         cpu.asm_argc = 1;
         //printf("DEX\n");
         cpu.x--;
-    } else {
-        cpu.instruction = "DEC";
-        //printf("DEC %s\n", cpu.instruction);
-        (*byte)--;
-        cpu_write(*addr, byte);
+        SET_ZERO_FLAG(cpu.x)
+        SET_NEG_FLAG(cpu.x)
+        return;
     }
+    cpu.instruction = "DEC";
+    //printf("DEC %s\n", cpu.instruction);
+    (*byte)--;
+    cpu_write(*addr, byte);
     SET_ZERO_FLAG(*byte)
     SET_NEG_FLAG(*byte)
 }
@@ -989,15 +997,17 @@ void handleRMW() {
             // TXS
             //printf("TXS\n");
             cpu.instruction = "TXS";
-            cpu.x = cpu.sp;
+            cpu.sp = cpu.x;
             cpu.cycles += 2;
             
         } else if (cpu.opcode == 0xBA) {
             // TSX
             //printf("TSX\n");
             cpu.instruction = "TSX";
-            cpu.sp = cpu.x;
+            cpu.x = cpu.sp;
             cpu.cycles += 2;
+            SET_ZERO_FLAG(cpu.x)
+            SET_NEG_FLAG(cpu.x)
         } else {
             printf("Broken Instruction 0x%x\n", cpu.opcode);
             cpu.fail();
