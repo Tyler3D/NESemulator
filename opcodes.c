@@ -45,8 +45,7 @@ Current solution is to manually check if offset is messed up like this:
 
 But this function could probably implement it as well
 */
-//(*idputs(int (*puts)(const char *)))(const char *)
-int getAddressingMode(uint8_t opcode) {
+int getAddressingMode() {
     return 0;
 }
 
@@ -109,8 +108,81 @@ void compare(uint8_t *first, uint8_t *second ) {
     SET_NEG_FLAG(result)
 }
 
-void branch(uint8_t *opcode) {
-    
+/*
+These instructions are always of 2 bytes length and perform in 2 CPU cycles, 
+if the branch is not taken (the condition resolving to 'false'), 
+and 3 cycles, if the branch is taken (when the condition is true). 
+If a branch is taken and the target is on a different page, this adds another CPU cycle (4 in total).
+*/
+
+void branch() {
+    READ_BYTE_PC(cpu.low)
+    int8_t target;
+    switch (cpu.opcode) {
+        case 0x10: // BPL branch on plus (negative clear)
+        if (IS_FLAG_OFF(negative))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+
+        case 0x30: // BMI branch on minus (negative set)
+        if (IS_FLAG_ON(negative))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+
+        case 0x50: // BVC branch on overflow clear
+        if (IS_FLAG_OFF(overflow))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+
+        case 0x70: // BVS branch on overflow set
+        if (IS_FLAG_ON(overflow))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+
+        case 0x90: // BCC branch on carry clear
+        if (IS_FLAG_OFF(carry))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+
+        case 0xB0: // BCS branch on carry set
+        if (IS_FLAG_ON(carry))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+
+        case 0xD0: // BNE branch on not equal (zero clear)
+        if (IS_FLAG_OFF(zero))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+
+        case 0xF0: // BEQ branch on equal (zero set)
+        if (IS_FLAG_ON(zero))
+            goto actuallyBranch;
+        goto branchFail;
+        break;
+        default:
+        printf("Broken Instruction 0x%x\n", cpu.opcode);
+        cpu.fail();
+        break;
+    }
+
+    branchFail:
+    cpu.cycles += 2;
+    return;
+
+    actuallyBranch:
+    target = (int8_t) cpu.low;
+    if (GET_PAGE_NUM(cpu.pc) != GET_PAGE_NUM(cpu.pc + target))
+        cpu.cycles += 4;
+    else
+        cpu.cycles += 3;
+    return;
 }
 
 
@@ -306,136 +378,9 @@ void DEC(uint8_t *byte, uint16_t *addr, bool immediate) {
 void handleControl() {
     uint16_t addr;
     uint8_t byte;
-    void (*func)(uint8_t *, uint16_t *, bool);
-
-    switch (cpu.opcode) {
-        case 0x00: // BRK impl
-
-        break;
-
-        case 0x08: // PHP impl
-
-        break;
-
-        case 0x10: // BPL rel
-
-        break;
-
-        case 0x18: // CLC impl
-
-        break;
-
-        case 0x20: // JSR abs
-
-        break;
-
-        case 0x24: // BIT zpg
-
-        break;
-
-        case 0x28: // PLP impl
-
-        break;
-
-        case 0x2C: // BIT abs
-
-        break;
-
-        case 0x30: // BMI rel
-
-        break;
-
-        case 0x38: // SEC impl
-
-        break;
-
-        case 0x40: // RTI impl
-
-        break;
-
-        case 0x48: // PHA impl
-
-        break;
-
-        case 0x4C: // JMP abs
-
-        break;
-        
-        case 0x50: // BVC rel
-
-        break;
-
-        case 0x58: // CLI impl
-
-        break;
-
-        case 0x60: // RTS impl
-
-        break;
-
-        case 0x68: // PLA impl
-
-        break;
-
-        case 0x6C: // JMP ind
-
-        break;
-
-        case 0x70: // BVS rel
-
-        break;
-
-        case 0x78: // SEI impl
-
-        break;
-
-        case 0x84: // STY zpg
-
-        break;
-
-        case 0x88: // DEY impl
-
-        break;
-
-        case 0x8C: // STY abs
-
-        break;
-
-        case 0x90: // BCC rel
-
-        break;
-
-        case 0x94: // STY zpg,X
-
-        break;
-
-        case 0x98: // TYA impl
-
-        break;
-
-        case 0xA0: // LDY #
-
-        break;
-
-        case 0xA4: // LDY zpg
-
-        break;
-
-        case 0xA8: // TAY impl
-
-        break;
-
-        case 0xAC: // LDY abs
-
-        break;
-
-        case 0xB0: // BCS rel
-
-        break;
-    }
 
     switch (cpu.opcode % 0x20) {
-        case 0x00: // impl, abs, #
+        case 0x00: // impl, abs, # first half interrupt stuff/second half cmp
 
         break;
 
@@ -443,7 +388,7 @@ void handleControl() {
         byte = zeropage(&addr, 0);
         break;
 
-        case 0x08: // impl
+        case 0x08: // impl Mostly Stack and register stuff
 
         break;
 
@@ -451,15 +396,15 @@ void handleControl() {
         byte = absolute(&addr, 0);
         break;
 
-        case 0x10: // rel
-
+        case 0x10: // rel branching
+        branch();
         break;
 
         case 0x14: // zeropage, X
         byte = zeropage(&addr, cpu.x);
         break;
 
-        case 0x18: // impl
+        case 0x18: // impl mostly flag stuff
 
         break;
 

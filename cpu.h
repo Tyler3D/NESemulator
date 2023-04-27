@@ -27,6 +27,8 @@
     else\
         cpu.status & ~carry;}
 
+#define GET_PAGE_NUM(X) ((X) % 0xFF)
+
 #define CHECK_PAGE_BOUNDARY(ADDR, REG) ( ((uint16_t) (ADDR - REG) % 0xFF) + REG <= 0xFF ) // Check this
 
 #define READ_BYTE_FROM_ADDR(ADDR, X) {\
@@ -49,6 +51,9 @@
     READ_BYTE(cpu.high)}
 
 #define SET_ADDR(ADDR, OFFSET) (ADDR) = ((((uint16_t) cpu.high) << 8) | (uint16_t) cpu.low) + OFFSET;
+
+#define IS_FLAG_ON(flag) ((cpu.status & flag) > 0)
+#define IS_FLAG_OFF(flag) IS_FLAG_ON(~(flag))
 
 struct CPU {
     uint8_t x;
