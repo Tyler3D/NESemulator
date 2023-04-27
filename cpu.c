@@ -89,7 +89,7 @@ void cpu_reset() {
 	cpu.a = 0;
 	cpu.x = 0;
 	cpu.y = 0;
-	cpu.sp = (uint8_t) 0x100; // Stack addresses 0x100-0x1ff in memory
+	cpu.sp = (uint8_t) 0xFF; // Stack addresses 0x100-0x1ff in memory
 	cpu.status = 0x00 | always_on_flag; // https://www.nesdev.org/wiki/Status_flags#The_B_flag
 }
 

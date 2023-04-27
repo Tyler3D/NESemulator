@@ -2,3 +2,5 @@ nes_emu
 *.o
 .vscode
 *.nes
+*.txt
+*.hex

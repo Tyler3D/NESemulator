@@ -108,6 +108,276 @@ void compare(uint8_t *first, uint8_t *second ) {
     SET_NEG_FLAG(result)
 }
 
+void push(uint8_t *byte) {
+    if (cpu.sp >= 0xFF) {
+        printf("Stack Overflow!\n");
+        cpu.fail();
+    }
+    cpu.sp++;
+    cpu_write(cpu.sp, byte);
+}
+
+void pull(uint8_t *byte) {
+    if (cpu.sp == 0xFF) {
+        printf("Stack Underflow!\n");
+        cpu.fail();
+    }
+    cpu_read(cpu.sp, byte);
+    cpu.sp--;
+}
+
+/* Control Instructions */
+/*
+These instructions mostly handle interrupts and
+subroutines
+*/
+void column0x00() {
+    switch (cpu.opcode) {
+        case 0x00: // BRK Force Break 
+        // This instruction seems rather complicated
+        // So we will implement it later
+        cpu.asm_argc = 1;
+        cpu.instruction = "BRK";
+        cpu.cycles += 7;
+        cpu.status |= irq;
+        printf("BRK currently unimplemented\n");
+        cpu.fail();
+        
+        break;
+
+        case 0x20: // JSR abs Jump to New Location Saving Return Address
+        // Check if high byte of PC is also pushed to stack
+        // idk if this is right
+        cpu.asm_argc = 1;
+        cpu.instruction = "JSR";
+        cpu.asm_argc = 3;
+        sprintf(cpu.asm_args, "$%X%X", cpu.high, cpu.low);
+        READ_WORD_PC()
+        uint8_t returnAddr = ((uint8_t) (0xFF & cpu.pc)) - 1;
+        push(&returnAddr);
+        cpu.cycles += 6;
+        cpu.pc = (((uint16_t) cpu.high) << 8) | cpu.low;
+        printf("JSR sorta implemented\n");
+        cpu.fail();
+        break;
+
+        case 0x40: // RTI Return from Interrupt
+        // pull SR, pull PC
+        cpu.instruction = "RTI";
+        cpu.asm_argc = 1;
+        cpu.cycles += 6;
+        pull(&cpu.status);
+        // How to pull PC?
+        printf("RTI sorta implemented\n");
+        cpu.fail();
+        break;
+
+        case 0x60: // RTS Return from Subroutine
+        // pull PC, PC+1 -> PC
+        cpu.instruction = "RTS";
+        cpu.asm_argc = 1;
+        cpu.cycles += 6;
+        printf("RTS unimplemented\n");
+        cpu.fail();
+        break;
+
+        case 0xA0: // LDY #%X
+        cpu.instruction = "LDY";
+        cpu.cycles += 2;
+        cpu.asm_argc = 2;
+        READ_BYTE_PC(cpu.low)
+        cpu.y = cpu.low;
+        SET_NEG_FLAG(cpu.y)
+        SET_ZERO_FLAG(cpu.y)
+        sprintf(cpu.asm_args, "#%X", cpu.low);
+        break;
+
+        case 0xC0: // CPY #%X
+        cpu.instruction = "CPY";
+        cpu.cycles += 2;
+        cpu.asm_argc = 2;
+        READ_BYTE_PC(cpu.low)
+        compare(&cpu.y, &cpu.low);
+        sprintf(cpu.asm_args, "#%X", cpu.low);
+        break;
+        
+        case 0xE0: // CPX #%X
+        cpu.instruction = "CPX";
+        cpu.cycles += 2;
+        cpu.asm_argc = 2;
+        READ_BYTE_PC(cpu.low)
+        compare(&cpu.x, &cpu.low);
+        sprintf(cpu.asm_args, "#%X", cpu.low);
+        break;
+    }
+}
+
+void column0x04(uint8_t *byte) {
+    cpu.asm_argc = 2;
+    cpu.cycles += 3;
+    switch (cpu.opcode) {
+        case 0x24: // BIT Test Bits in Memory with Accumulator
+        /*
+        bits 7 and 6 of operand are transfered to bit 7 and 6 of SR (N,V);
+        the zero-flag is set to the result of operand AND accumulator.
+        */
+        cpu.instruction = "BIT";
+        printf("BIT not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0x84: // STY
+        // Store Index Y in Memory
+        cpu.instruction = "STY";
+        printf("STY not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0xA4: // LDY
+        cpu.instruction = "LDY";
+        cpu.cycles += 3;
+        cpu.y = *byte;
+        SET_NEG_FLAG(cpu.y)
+        SET_ZERO_FLAG(cpu.y)
+        sprintf(cpu.asm_args, "$%X", cpu.low);
+        break;
+
+        case 0xC4: // CPY
+        cpu.instruction = "CPY";
+        cpu.cycles += 3;
+        compare(&cpu.y, byte);
+        sprintf(cpu.asm_args, "$%X", cpu.low);
+        break;
+        
+        case 0xE4: // CPX
+        cpu.instruction = "CPX";
+        cpu.cycles += 3;
+        compare(&cpu.x, byte);
+        sprintf(cpu.asm_args, "$%X", cpu.low);
+        break;
+    }
+}
+
+/*
+These instructions seem to mostly effect the stack and registers
+They all have implied args
+Pushing to stack takes 3 cycles
+Pulling from stack takes 4 cycles
+Simple ALU ops on registers takes 2 cycles
+*/
+
+void column0x08() {
+    cpu.asm_argc = 1;
+    switch (cpu.opcode) {
+        case 0x08: // PHP Push Processor Status on Stack
+        cpu.instruction = "PHP";
+        cpu.cycles += 3;
+        push(&cpu.status); // Check B_flag
+        break;
+
+        case 0x28: // PLP Pull Processor Status from Stack
+        cpu.instruction = "PLP";
+        cpu.cycles += 4;
+        pull(&cpu.status);
+        break;
+
+        case 0x48: // PHA Push Accumulator on Stack
+        cpu.instruction = "PHA";
+        cpu.cycles += 3;
+        push(&cpu.a);
+        break;
+
+        case 0x68: // PLA Pull Accumulator from Stack
+        cpu.instruction = "PLA";
+        cpu.cycles += 4;
+        pull(&cpu.a);
+        break;
+
+        case 0x88: // DEY Decrement Index Y by One
+        cpu.instruction = "DEY";
+        cpu.cycles += 2;
+        printf("DEY not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0xA8: // TAY Transfer Accumulator to Index Y
+        cpu.instruction = "TAY";
+        cpu.cycles += 2;
+        printf("TAY not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0xC8: // INY Increment Index Y by One
+        cpu.instruction = "INY";
+        cpu.cycles += 2;
+        printf("INY not implemented\n");
+        cpu.fail();
+        break;
+        
+        case 0xE8: // INX Increment Index X by One
+        cpu.instruction = "INX";
+        cpu.cycles += 2;
+        printf("INX not implemented\n");
+        cpu.fail();
+        break;
+    }
+}
+
+void column0x0C(uint8_t *byte) {
+    cpu.asm_argc = 3;
+    sprintf(cpu.asm_args, "$%X%X", cpu.high, cpu.low);
+    switch (cpu.opcode) {
+        case 0x2C: // BIT
+        cpu.instruction = "BIT";
+        cpu.cycles += 4;
+        printf("BIT not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0x4C: // JMP abs
+        cpu.instruction = "JMP";
+        cpu.cycles += 3;
+        printf("JMP abs not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0x6C: // JMP ind
+        cpu.instruction = "JMP";
+        cpu.cycles += 5;
+        printf("JMP ind not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0x8C: // STY
+        cpu.instruction = "STY";
+        cpu.cycles += 4;
+        printf("STY not implemented\n");
+        cpu.fail();
+        break;
+
+        case 0xAC: // LDY
+        cpu.instruction = "LDY";
+        cpu.cycles += 4;
+        cpu.y = *byte;
+        SET_NEG_FLAG(cpu.y)
+        SET_ZERO_FLAG(cpu.y)
+        break;
+
+        case 0xCC: // CPY
+        cpu.instruction = "CPY";
+        cpu.cycles += 4;
+        compare(&cpu.y, byte);
+        break;
+        
+        case 0xEC: // CPX
+        cpu.instruction = "CPX";
+        cpu.cycles += 4;
+        compare(&cpu.x, byte);
+        break;
+    }
+    sprintf(cpu.asm_args, "$%X%X", cpu.high, cpu.low);
+}
+
 /*
 These instructions are always of 2 bytes length and perform in 2 CPU cycles, 
 if the branch is not taken (the condition resolving to 'false'), 
@@ -117,51 +387,61 @@ If a branch is taken and the target is on a different page, this adds another CP
 
 void branch() {
     READ_BYTE_PC(cpu.low)
-    int8_t target;
+    uint16_t targetPC = cpu.pc + ((int8_t) cpu.low);
+    sprintf(cpu.asm_args, "$%X", targetPC);
+    cpu.asm_argc = 3;
     switch (cpu.opcode) {
         case 0x10: // BPL branch on plus (negative clear)
+        cpu.instruction = "BPL";
         if (IS_FLAG_OFF(negative))
             goto actuallyBranch;
         goto branchFail;
         break;
 
         case 0x30: // BMI branch on minus (negative set)
+        cpu.instruction = "BMI";
         if (IS_FLAG_ON(negative))
             goto actuallyBranch;
         goto branchFail;
         break;
 
         case 0x50: // BVC branch on overflow clear
+        cpu.instruction = "BVC";
         if (IS_FLAG_OFF(overflow))
             goto actuallyBranch;
         goto branchFail;
         break;
 
         case 0x70: // BVS branch on overflow set
+        cpu.instruction = "BVS";
         if (IS_FLAG_ON(overflow))
             goto actuallyBranch;
         goto branchFail;
         break;
 
         case 0x90: // BCC branch on carry clear
+        cpu.instruction = "BCC";
         if (IS_FLAG_OFF(carry))
             goto actuallyBranch;
         goto branchFail;
         break;
 
         case 0xB0: // BCS branch on carry set
+        cpu.instruction = "BCS";
         if (IS_FLAG_ON(carry))
             goto actuallyBranch;
         goto branchFail;
         break;
 
         case 0xD0: // BNE branch on not equal (zero clear)
+        cpu.instruction = "BNE";
         if (IS_FLAG_OFF(zero))
             goto actuallyBranch;
         goto branchFail;
         break;
 
         case 0xF0: // BEQ branch on equal (zero set)
+        cpu.instruction = "BEQ";
         if (IS_FLAG_ON(zero))
             goto actuallyBranch;
         goto branchFail;
@@ -177,12 +457,59 @@ void branch() {
     return;
 
     actuallyBranch:
-    target = (int8_t) cpu.low;
-    if (GET_PAGE_NUM(cpu.pc) != GET_PAGE_NUM(cpu.pc + target))
+    if (GET_PAGE_NUM(cpu.pc) != GET_PAGE_NUM(targetPC))
         cpu.cycles += 4;
     else
         cpu.cycles += 3;
     return;
+}
+
+void column0x18() {
+    cpu.asm_argc = 1;
+    cpu.cycles += 2;
+    switch (cpu.opcode) {
+        case 0x18: // CLC
+        cpu.instruction = "CLC";
+        cpu.status &= ~carry;
+        break;
+
+        case 0x38: // SEC
+        cpu.instruction = "SEC";
+        cpu.status |= carry;
+        break;
+
+        case 0x58: // CLI
+        cpu.instruction = "CLI";
+        cpu.status &= ~irq;
+        break;
+
+        case 0x78: // SEI
+        cpu.instruction = "SEI";
+        cpu.status |= irq;
+        break;
+
+        case 0x98: // TYA
+        cpu.instruction = "TYA";
+        cpu.a = cpu.y;
+        SET_ZERO_FLAG(cpu.a);
+        SET_NEG_FLAG(cpu.a);
+        break;
+
+        case 0xB8: // CLV
+        cpu.instruction = "CLV";
+        cpu.status &= ~overflow;
+        break;
+
+        case 0xD8: // CLD
+        cpu.instruction = "CLD";
+        cpu.status &= ~b_flag;
+        break;
+        
+        case 0xF8: // SED
+        cpu.instruction = "SED";
+        cpu.status |= b_flag;
+        break;
+    }
 }
 
 
@@ -381,15 +708,16 @@ void handleControl() {
 
     switch (cpu.opcode % 0x20) {
         case 0x00: // impl, abs, # first half interrupt stuff/second half cmp
-
+        column0x00();
         break;
 
         case 0x04: // zeropage
         byte = zeropage(&addr, 0);
+        column0x04(&byte);
         break;
 
         case 0x08: // impl Mostly Stack and register stuff
-
+        column0x08();
         break;
 
         case 0x0C: // abs
@@ -402,14 +730,38 @@ void handleControl() {
 
         case 0x14: // zeropage, X
         byte = zeropage(&addr, cpu.x);
+        if (cpu.opcode == 0x94) {
+            // STY
+            printf("STY not implemented\n");
+            cpu.fail();
+        } else if (cpu.opcode == 0xB4) {
+            // LDY
+            cpu.cycles += 4;
+            cpu.y = byte;
+            SET_NEG_FLAG(cpu.y)
+            SET_ZERO_FLAG(cpu.y)
+        } else {
+            printf("Broken instruction 0x%X\n", cpu.opcode);
+            cpu.fail();
+        }
         break;
 
         case 0x18: // impl mostly flag stuff
-
+        column0x18();
         break;
 
         case 0x1C: // absolute, X
-        byte = absolute(&addr, cpu.x);
+        if (cpu.opcode == 0xBC) {
+            //LDY
+            byte = absolute(&addr, cpu.x);
+            cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.x)) ? 4 : 5;
+            cpu.y = byte;
+            SET_NEG_FLAG(cpu.y)
+            SET_ZERO_FLAG(cpu.y)
+        } else {
+            printf("Broken instruction 0x%X\n", cpu.opcode);
+            cpu.fail();
+        }
         break;
 
         default:

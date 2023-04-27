@@ -40,8 +40,10 @@ int main(int argc, char **argv) {
         goto fileEnd;
     }
 
-    if (strncmp((char *) rom.header, "NES", 4) != 0)
+    if (strncmp((char *) rom.header, "NES", 3) != 0) {
         printf("Missing NES at Start of Header\n");
+        goto fileEnd;
+    }
 
     rom.PRG_ROM_SIZE = rom.header[4];
     rom.CHR_ROM_SIZE = rom.header[5];
