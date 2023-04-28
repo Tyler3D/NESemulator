@@ -8,6 +8,15 @@
 FILE *fp;
 
 void fail() {
+    // Print nes test
+    printf("NES TEST RESULTS\n");
+    uint8_t byte;
+    READ_BYTE_FROM_ADDR(0x02, byte)
+    printf("Branch tests %X\n", byte);
+    READ_BYTE_FROM_ADDR(0x03, byte)
+    printf("Other tests %X\n", byte);
+
+
     free(cpu.memory);
     if (rom.CHR_ROM_SIZE > 0)
         free(rom.CHR_ROM_data);

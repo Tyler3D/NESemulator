@@ -22,7 +22,7 @@
 // False if out of bounds
 bool cpu_read(uint16_t addr, uint8_t *data) {
     uint32_t mapped_addr;
-    printf("Attempting to read %X\n", addr);
+    //printf("Attempting to read %X\n", addr);
     if (addr >= 0x0000 && addr <= 0x1FFF) {
         *data = cpu.memory[addr & 0x07FF]; // Reading from RAM
     } else if (addr >= 0x2000 && addr <= 0x3FFF) {
@@ -38,7 +38,7 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
         *data = rom.PRG_ROM_data[mapped_addr];
     } else
         return false;
-    printf("Read data %X\n", *data);
+    //printf("Read data %X\n", *data);
     return true;
 }
 
@@ -93,7 +93,7 @@ void cpu_reset() {
 	cpu.a = 0;
 	cpu.x = 0;
 	cpu.y = 0;
-	cpu.sp = (uint8_t) 0xFD;//0xFF; // Stack addresses 0x100-0x1ff in memory
+	cpu.sp = (uint8_t) 0xFD; // Stack addresses 0x100-0x1ff in memory
 	cpu.status = 0x00 |  always_on_flag | irq; // https://www.nesdev.org/wiki/Status_flags#The_B_flag
     cpu.cycles = 0x07;
 
@@ -133,5 +133,13 @@ void cpu_clock() {
         cpu.fail();
     }
     log_state();
+    /*
+    Currently PC: D959 gives the wrong result
+    D959  B1 FF     LDA ($FF),Y = 0146 @ 0245 = 12  A:01 X:65 Y:FF P:E5 SP:FA PPU: 77,215 CYC:8824
+    A is supposed to become 12 after this.
+    But LDA $0146 is 0 in this implemention
+    We are logging page 1 for each instruction to debug this
+    */
+    log_page(1);
     printf("CPU.A: %X\n", cpu.a);
 }

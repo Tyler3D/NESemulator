@@ -51,3 +51,22 @@ void log_state() {
 void log_fail() {
 
 }
+
+void log_page(uint16_t pageNum) {
+    char buf[0x100];
+    for (uint16_t i = (pageNum << 8); i < ((pageNum + 1) << 8); i++) {
+        if ((i % 0x10) == 0) {
+            sprintf(buf, "\n0x%-4X ", i);
+            fwrite(buf, sizeof(char), strnlen(buf, 128), logfp);
+            fwrite(buf, sizeof(char), strnlen(buf, 128), stdout);
+        }
+        uint8_t byte;
+        cpu_read(i, &byte);
+        sprintf(buf, "%2X ", byte);
+        fwrite(buf, sizeof(char), strnlen(buf, 128), logfp);
+        fwrite(buf, sizeof(char), strnlen(buf, 128), stdout);
+    }
+    sprintf(buf, "\n");
+    fwrite(buf, sizeof(char), strnlen(buf, 128), logfp);
+    fwrite(buf, sizeof(char), strnlen(buf, 128), stdout);
+}

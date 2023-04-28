@@ -52,7 +52,8 @@ int getAddressingMode() {
 
 uint8_t zeropage(uint16_t *addr, uint8_t offset) {
     uint8_t byte;
-    READ_BYTE_FROM_ADDR(cpu.pc + offset, cpu.low)
+    READ_BYTE_FROM_ADDR(cpu.pc, cpu.low)
+    cpu.low += offset;
     SET_ADDR(*addr, 0)
     READ_BYTE_FROM_ADDR(*addr, byte)
     cpu.pc++;
@@ -229,7 +230,7 @@ void column0x00() {
     }
 }
 
-void column0x04(uint8_t *byte) {
+void column0x04(uint8_t *byte, uint16_t *addr) {
     cpu.asm_argc = 2;
     cpu.cycles += 3;
     switch (cpu.opcode) {
@@ -249,18 +250,13 @@ void column0x04(uint8_t *byte) {
             cpu.status &= ~negative;
         uint8_t result = cpu.a & *byte;
         SET_ZERO_FLAG(result)
-        //printf("BIT not implemented\n");
-        //cpu.fail();
         break;
 
         case 0x84: // STY
         // Store Index Y in Memory
+        // Check
         cpu.instruction = "STY";
-        // Some work around is probably needed to get address
-        // Log is mostly correct up to here
-        // Cycles are inaccurate tho
-        printf("STY not implemented\n");
-        cpu.fail();
+        cpu_write(*addr, &cpu.y);
         break;
 
         case 0xA4: // LDY
@@ -359,23 +355,29 @@ void column0x08() {
     }
 }
 
-void column0x0C(uint8_t *byte) {
+void column0x0C(uint8_t *byte, uint16_t *addr) {
     cpu.asm_argc = 3;
     sprintf(cpu.asm_args, "$%02X%02X", cpu.high, cpu.low);
     switch (cpu.opcode) {
         case 0x2C: // BIT
         cpu.instruction = "BIT";
         cpu.cycles += 4;
-        printf("BIT not implemented\n");
-        cpu.fail();
+        if (((*byte) & overflow) > 0)
+            cpu.status |= overflow;
+        else
+            cpu.status &= ~overflow;
+        if (((*byte) & negative) > 0)
+            cpu.status |= negative;
+        else
+            cpu.status &= ~negative;
+        uint8_t result = cpu.a & *byte;
+        SET_ZERO_FLAG(result)
         break;
 
         case 0x4C: // JMP abs
         cpu.instruction = "JMP";
         cpu.cycles += 3;
         cpu.pc = (((uint16_t) cpu.high) << 8) | cpu.low;
-        //printf("JMP abs not implemented\n");
-        //cpu.fail();
         break;
 
         case 0x6C: // JMP ind
@@ -388,8 +390,7 @@ void column0x0C(uint8_t *byte) {
         case 0x8C: // STY
         cpu.instruction = "STY";
         cpu.cycles += 4;
-        printf("STY not implemented\n");
-        cpu.fail();
+        cpu_write(*addr, &cpu.y);
         break;
 
         case 0xAC: // LDY
@@ -658,10 +659,10 @@ void LSR(uint8_t *byte, uint16_t *addr, bool immediate) {
         cpu.a = cpu.a >> 1;
         SET_ZERO_FLAG(cpu.a)
     } else {
-        cpu_write(*addr, byte);
         SET_CARRY_FLAG((*byte & 0x01) > 0)
         *byte = *byte >> 1;
         SET_ZERO_FLAG(*byte)
+        cpu_write(*addr, byte);
     }
 }
 
@@ -779,7 +780,7 @@ void handleControl() {
 
         case 0x04: // zeropage
         byte = zeropage(&addr, 0);
-        column0x04(&byte);
+        column0x04(&byte, &addr);
         break;
 
         case 0x08: // impl Mostly Stack and register stuff
@@ -788,7 +789,7 @@ void handleControl() {
 
         case 0x0C: // abs
         byte = absolute(&addr, 0);
-        column0x0C(&byte);
+        column0x0C(&byte, &addr);
         break;
 
         case 0x10: // rel branching
@@ -864,7 +865,8 @@ void handleALU() {
     switch(cpu.opcode % 0x20) {
         case 0x01: // (indirect, X)
         //cpu.pc++;
-        READ_BYTE_FROM_ADDR(cpu.pc + cpu.x, cpu.low)
+        READ_BYTE_FROM_ADDR(cpu.pc, cpu.low)
+        sprintf(cpu.asm_args, "($%02X,x)", cpu.low);
         cpu.low += cpu.x;
         SET_ADDR(addr, 0)
         READ_BYTE_FROM_ADDR(addr, cpu.low)
@@ -872,7 +874,6 @@ void handleALU() {
         SET_ADDR(addr, 0)
         READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
-        sprintf(cpu.asm_args, "($%02X,x)", cpu.low);
         //assembly = "(d,x)";
         cpu.asm_argc = 2;
         cpu.cycles += 6;
@@ -902,18 +903,18 @@ void handleALU() {
 
         case 0x11: // (indirect), Y
         //cpu.pc++;
-        READ_BYTE_FROM_ADDR(cpu.pc + cpu.x, cpu.low)
+        READ_BYTE_FROM_ADDR(cpu.pc, cpu.low)
+        sprintf(cpu.asm_args, "($%02X),y", cpu.low);
         SET_ADDR(addr, 0)
         READ_BYTE_FROM_ADDR(addr, cpu.low)
         READ_BYTE_FROM_ADDR(addr + 1, cpu.high)
         SET_ADDR(addr, 0)
-        if ((GET_PAGE_NUM(addr) != GET_PAGE_NUM(addr + cpu.y)) || func == STA) // STA always does a lot of cycles
+        if ((GET_PAGE_NUM(addr + cpu.y) != GET_PAGE_NUM(addr)) || func == STA) // STA always does a lot of cycles
             cpu.cycles += 1;
         addr += cpu.y;
         READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
         
-        sprintf(cpu.asm_args, "($%02X),y", cpu.low);
         cpu.asm_argc = 3;
         //assembly = "(d),y"; // STA always does 6 cycles
         cpu.cycles += 5;
@@ -922,7 +923,7 @@ void handleALU() {
 
         case 0x15: // zeropage, X
         byte = zeropage(&addr, cpu.x);
-        sprintf(cpu.asm_args, "$%02X,x", cpu.low);
+        sprintf(cpu.asm_args, "$%02X,x", cpu.low - cpu.x);
         //assembly = "d,x";
         cpu.cycles += 4;
         func(&byte, &addr, false);
@@ -932,13 +933,17 @@ void handleALU() {
         byte = absolute(&addr, cpu.y);
         sprintf(cpu.asm_args, "$%02X%02X,y", cpu.high, cpu.low);
         //assembly = "a,y"; // // STA always does 5 cycles
-        cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.y) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
+        if ((GET_PAGE_NUM(addr - cpu.y) != GET_PAGE_NUM(addr)) || func == STA) // STA always does a lot of cycles
+            cpu.cycles += 1;
+        cpu.cycles +=  4; // add 1 to cycles if page boundary is crossed
         func(&byte, &addr, false);
         break;
 
         case 0x1D: // absolute, X
         byte = absolute(&addr, cpu.x); // STA always does 5 cycles
-        cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.x) && func != &STA) ? 4 : 5; // add 1 to cycles if page boundary is crossed
+        if ((GET_PAGE_NUM(addr - cpu.x) != GET_PAGE_NUM(addr)) || func == STA) // STA always does a lot of cycles
+            cpu.cycles += 1;
+        cpu.cycles += 4; // add 1 to cycles if page boundary is crossed
         sprintf(cpu.asm_args, "$%02X%02X,x", cpu.high, cpu.low);
         //assembly = "a,x";
         func(&byte, &addr, false);
@@ -1017,11 +1022,11 @@ void handleRMW() {
         case 0x16: // zeropage, X or Y
         if (cpu.opcode == 0x96 || cpu.opcode == 0xB6) { // STX and LDX use zeropage, Y
             byte = zeropage(&addr, cpu.y);
-            sprintf(cpu.asm_args, "$%02X,y", cpu.low);
+            sprintf(cpu.asm_args, "$%02X,y", cpu.low - cpu.y);
             //assembly = "d,y";
         } else {
             byte = zeropage(&addr, cpu.x);
-            sprintf(cpu.asm_args, "$%02X,x", cpu.low);
+            sprintf(cpu.asm_args, "$%02X,x", cpu.low - cpu.x);
             //assembly = "d,x";
         }
         cpu.cycles += (func == &LDX || func == &STX) ? 4 : 6; // LDX and STX are only 4 cycles
@@ -1056,7 +1061,9 @@ void handleRMW() {
         // Need to figure out how many cycles
         if (cpu.opcode == 0xBE) {// LDX uses absolute, Y
             byte = absolute(&addr, cpu.y);
-            cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.y)) ? 4 : 5;
+            if ((GET_PAGE_NUM(addr - cpu.y) != GET_PAGE_NUM(addr)))
+                cpu.cycles += 1;
+            cpu.cycles += 4;
             sprintf(cpu.asm_args, "$%02X%02X,y", cpu.high, cpu.low);
             //assembly = "a,y";
         } else {

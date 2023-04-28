@@ -8,5 +8,6 @@ FILE *logfp;
 
 bool log_init();
 void log_state();
+void log_page(uint16_t);
 
 #endif
