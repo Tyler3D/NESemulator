@@ -44,10 +44,6 @@
     READ_BYTE(X)\
     cpu.pc++;}
 
-#define READ_WORD(ADDR) {\
-    READ_BYTE_FROM_ADDR((ADDR), cpu.low)\
-    READ_BYTE_FROM_ADDR((ADDR) + 1, cpu.high)}
-
 #define READ_WORD_PC() {\
     READ_BYTE_PC(cpu.low)\
     READ_BYTE_PC(cpu.high)}

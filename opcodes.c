@@ -227,6 +227,10 @@ void column0x00() {
         compare(&cpu.x, &cpu.low);
         sprintf(cpu.asm_args, "#%02X", cpu.low);
         break;
+        default:
+        printf("Broken Instruction 0x%x\n", cpu.opcode);
+        cpu.fail();
+        break;
     }
 }
 
@@ -277,6 +281,10 @@ void column0x04(uint8_t *byte, uint16_t *addr) {
         cpu.instruction = "CPX";
         compare(&cpu.x, byte);
         sprintf(cpu.asm_args, "$%02X", cpu.low);
+        break;
+        default:
+        printf("Broken Instruction 0x%x\n", cpu.opcode);
+        cpu.fail();
         break;
     }
 }
@@ -383,8 +391,14 @@ void column0x0C(uint8_t *byte, uint16_t *addr) {
         case 0x6C: // JMP ind
         cpu.instruction = "JMP";
         cpu.cycles += 5;
-        printf("JMP ind not implemented\n");
-        cpu.fail();
+        uint8_t low = *byte;
+        uint8_t hi;
+        READ_BYTE_FROM_ADDR((((*addr & 0xFF) == 0xFF) ? (*addr & 0xFF00) : *addr + 1), hi)
+        cpu.pc = (((uint16_t) hi) << 8) | low;
+        sprintf(cpu.asm_args, "$(%02X%02X)", cpu.high, cpu.low);
+        return;
+        //printf("JMP ind not implemented\n");
+        //cpu.fail();
         break;
 
         case 0x8C: // STY
@@ -411,6 +425,10 @@ void column0x0C(uint8_t *byte, uint16_t *addr) {
         cpu.instruction = "CPX";
         cpu.cycles += 4;
         compare(&cpu.x, byte);
+        break;
+        default:
+        printf("Broken Instruction 0x%x\n", cpu.opcode);
+        cpu.fail();
         break;
     }
     sprintf(cpu.asm_args, "$%02X%02X", cpu.high, cpu.low);
@@ -800,8 +818,9 @@ void handleControl() {
         byte = zeropage(&addr, cpu.x);
         if (cpu.opcode == 0x94) {
             // STY
-            printf("STY not implemented\n");
-            cpu.fail();
+            cpu_write(addr, &cpu.y);
+            //printf("STY not implemented\n");
+            //cpu.fail();
         } else if (cpu.opcode == 0xB4) {
             // LDY
             cpu.cycles += 4;
@@ -870,7 +889,7 @@ void handleALU() {
         cpu.low += cpu.x;
         SET_ADDR(addr, 0)
         READ_BYTE_FROM_ADDR(addr, cpu.low)
-        READ_BYTE_FROM_ADDR(addr + 1, cpu.high)
+        READ_BYTE_FROM_ADDR(((addr & 0xFF) == 0xFF) ? (addr & 0xFF00) : addr + 1, cpu.high)
         SET_ADDR(addr, 0)
         READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
@@ -907,7 +926,7 @@ void handleALU() {
         sprintf(cpu.asm_args, "($%02X),y", cpu.low);
         SET_ADDR(addr, 0)
         READ_BYTE_FROM_ADDR(addr, cpu.low)
-        READ_BYTE_FROM_ADDR(addr + 1, cpu.high)
+        READ_BYTE_FROM_ADDR( ((addr & 0xFF) == 0xFF) ? (addr & 0xFF00) : addr + 1, cpu.high)
         SET_ADDR(addr, 0)
         if ((GET_PAGE_NUM(addr + cpu.y) != GET_PAGE_NUM(addr)) || func == STA) // STA always does a lot of cycles
             cpu.cycles += 1;

@@ -140,6 +140,9 @@ void cpu_clock() {
     But LDA $0146 is 0 in this implemention
     We are logging page 1 for each instruction to debug this
     */
+    log_page(0);
     log_page(1);
-    printf("CPU.A: %X\n", cpu.a);
+    log_page(2);
+    log_page(3);
+    printf("CPU.A: %X, CPU:PC %X\n", cpu.a, cpu.pc);
 }
