@@ -111,6 +111,7 @@ void cpu_clock() {
         rewriting code
     */
     cpu.logPC = cpu.pc;
+    cpu.logCycles = cpu.cycles;
     READ_BYTE_PC(cpu.opcode);
     cpu.high = 0;
     cpu.low = 0;
@@ -140,9 +141,9 @@ void cpu_clock() {
     But LDA $0146 is 0 in this implemention
     We are logging page 1 for each instruction to debug this
     */
-    log_page(0);
-    log_page(1);
-    log_page(2);
-    log_page(3);
+    //log_page(0);
+    //log_page(1);
+    //log_page(2);
+    //log_page(3);
     printf("CPU.A: %X, CPU:PC %X\n", cpu.a, cpu.pc);
 }

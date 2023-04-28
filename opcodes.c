@@ -268,25 +268,23 @@ void column0x04(uint8_t *byte, uint16_t *addr) {
         cpu.y = *byte;
         SET_NEG_FLAG(cpu.y)
         SET_ZERO_FLAG(cpu.y)
-        sprintf(cpu.asm_args, "$%02X", cpu.low);
         break;
 
         case 0xC4: // CPY
         cpu.instruction = "CPY";
         compare(&cpu.y, byte);
-        sprintf(cpu.asm_args, "$%02X", cpu.low);
         break;
         
         case 0xE4: // CPX
         cpu.instruction = "CPX";
         compare(&cpu.x, byte);
-        sprintf(cpu.asm_args, "$%02X", cpu.low);
         break;
         default:
         printf("Broken Instruction 0x%x\n", cpu.opcode);
         cpu.fail();
         break;
     }
+    sprintf(cpu.asm_args, "$%02X", cpu.low);
 }
 
 /*
@@ -818,6 +816,10 @@ void handleControl() {
         byte = zeropage(&addr, cpu.x);
         if (cpu.opcode == 0x94) {
             // STY
+            cpu.instruction = "STY";
+            cpu.asm_argc = 2;
+            sprintf(cpu.asm_args, "$%02X,x", cpu.low);
+            cpu.cycles += 4;
             cpu_write(addr, &cpu.y);
             //printf("STY not implemented\n");
             //cpu.fail();
@@ -841,7 +843,10 @@ void handleControl() {
         if (cpu.opcode == 0xBC) {
             //LDY
             byte = absolute(&addr, cpu.x);
-            cpu.cycles += (CHECK_PAGE_BOUNDARY(addr, cpu.x)) ? 4 : 5;
+            sprintf(cpu.asm_args, "$%X%X,x", cpu.high, cpu.low);
+            if ((GET_PAGE_NUM(addr - cpu.x) != GET_PAGE_NUM(addr)))
+                cpu.cycles += 1;
+            cpu.cycles += 4;
             cpu.y = byte;
             SET_NEG_FLAG(cpu.y)
             SET_ZERO_FLAG(cpu.y)

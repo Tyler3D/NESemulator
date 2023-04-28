@@ -31,8 +31,6 @@
 
 #define GET_PAGE_NUM(X) (((X) % 0xFF00) >> 8)
 
-#define CHECK_PAGE_BOUNDARY(ADDR, REG) ( ((uint16_t) (ADDR - REG) % 0xFF) + REG <= 0xFF ) // Check this
-
 #define READ_BYTE_FROM_ADDR(ADDR, X) {\
     if (!cpu_read((ADDR), &(X))) {\
         printf("Could not read byte at %X\n", ADDR);\
@@ -64,6 +62,7 @@ struct CPU {
     uint8_t ppu_regs[8];
     uint8_t apu_io_regs[0x18];
     uint32_t cycles;
+    uint32_t logCycles;
     uint16_t logPC;
     uint8_t opcode;
     uint8_t low;
