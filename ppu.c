@@ -5,6 +5,8 @@
 #define MAX_CROM
 #define SCREEN_WIDTH
 #define SCREEN_HEIGHT
+#define CROM_WIDTH
+#define CROM_HEIGHT
 
 // Move the typedef later
 
@@ -14,8 +16,8 @@ typedef struct color {
 	uint8_t b; 
 }
 
-uint8_t crom[MAX_CROM * 3];
-uint8_t palettes[32];
+color crom[CROM_WIDTH * CROM_HEIGHT];
+color palettes[32];
 uint8_t vram[2048];
 uint8_t oam[256];
 uint8_t system_pallete[64] = [
@@ -41,10 +43,21 @@ uint8_t screen_buf[SCREEN_HEIGHT * SCREEN_WIDTH * 3];
 // No need to do complicated registers
 
 void set_pixel(uint8_t x, uint8_t y, color rgb){
-	screen_buf[(y * SCREEN_WIDTH + x) * 3] = r;
-	screen_buf[(y * SCREEN_WIDTH + x) * 3] = g;
-	screen_buf[(y * SCREEN_WIDTH + x) * 3] = b;
+	screen_buf[(y * SCREEN_WIDTH + x) * 3] = rgb.r;
+	screen_buf[(y * SCREEN_WIDTH + x) * 3] = rgb.b;
+	screen_buf[(y * SCREEN_WIDTH + x) * 3] = rgb.g;
 }
 
-for 
+void set_tile(uint8_t tile, uint8_t x, uint8_t y){
+   uint8_t initial_index = ((tile / 8) * CROM_WIDTH + (tile % 8));
+   uint8_t crom_index;
+   for (int row = 0; row < 8; row++){
+      for(int col = 0; col < 8; col++){
+         crom_index = initial_index + row * CROM_WIDTH + col;
+         set_pixel(x + col, y + row, crom[crom_index]);
+      }
+   }
+}
+
+
 
