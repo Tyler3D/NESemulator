@@ -30,22 +30,23 @@ VPHB SINN
 PPU CTRL reg
 */
 
-#define NAMETABLE_1  ((ppu.ppu_regs[PPUCTRL] & (1 << 0)) > 0)
-#define NAMETABLE_2  ((ppu.ppu_regs[PPUCTRL] & (1 << 1)) > 0)
+#define NAMETABLE_1 ((ppu.ppu_regs[PPUCTRL] & (1 << 0)) > 0)
+#define NAMETABLE_2 ((ppu.ppu_regs[PPUCTRL] & (1 << 1)) > 0)
 #define VRAM_INCREMENT ((ppu.ppu_regs[PPUCTRL] & (1 << 2)) > 0)
-#define SPRITE_PATTERN_ADDR  ((ppu.ppu_regs[PPUCTRL] & (1 << 3)) > 0)
-#define BACKGROUND_PATTERN_ADDR  ((ppu.ppu_regs[PPUCTRL] & (1 << 4)) > 0)
-#define SPRITE_SIZE  ((ppu.ppu_regs[PPUCTRL] & (1 << 5)) > 0)
+#define SPRITE_PATTERN_ADDR ((ppu.ppu_regs[PPUCTRL] & (1 << 3)) > 0)
+#define BACKGROUND_PATTERN_ADDR ((ppu.ppu_regs[PPUCTRL] & (1 << 4)) > 0)
+#define SPRITE_SIZE ((ppu.ppu_regs[PPUCTRL] & (1 << 5)) > 0)
 #define IS_NMI_ENABLED() ((ppu.ppu_regs[PPUCTRL] & (1 << 7)) > 0) // Disable/Enable nmi during vertical blank
 
-typedef struct color {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b; 
+typedef struct color
+{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
 } color;
 
-
-struct PPU {
+struct PPU
+{
     uint8_t *memory;
     uint8_t *vram;
     uint8_t palettes[32]; // Might need to zero out somehow
@@ -57,7 +58,8 @@ struct PPU {
     color screen[SCREEN_WIDTH][SCREEN_HEIGHT];
 } ppu;
 
-enum regs {
+enum regs
+{
     PPUCTRL = 0,
     PPUMASK = 1,
     PPUSTATUS = 2,

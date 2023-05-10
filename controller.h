@@ -3,7 +3,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct controller {
+struct controller
+{
     uint8_t buttons;
     uint8_t bitCounter;
     bool isPolling;
