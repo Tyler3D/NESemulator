@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "rom.h"
 #include "cpu.h"
+#include "ppu.h"
 #include "logger.h"
 
 /*
@@ -21,12 +22,13 @@
 // Returns true if read
 // False if out of bounds
 bool cpu_read(uint16_t addr, uint8_t *data) {
-    uint32_t mapped_addr;
+    uint16_t mapped_addr;
     //printf("Attempting to read %X\n", addr);
     if (addr >= 0x0000 && addr <= 0x1FFF) {
         *data = cpu.memory[addr & 0x07FF]; // Reading from RAM
     } else if (addr >= 0x2000 && addr <= 0x3FFF) {
-        *data = cpu.ppu_regs[(addr - 0x2000) % 8]; // NES PPU registers
+        return cpu_ppu_read((addr - 0x2000) % 0x08, data); // NES PPU registers
+        //*data = cpu.ppu_regs[(addr - 0x2000) % 8];
     } else if (addr >= 0x4000 && addr <= 0x4017) {
         *data = cpu.apu_io_regs[addr - 0x4000];
     } else if (addr >= 0x4018 && addr <= 0x401F) {
@@ -49,7 +51,8 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
     if (addr >= 0x0000 && addr <= 0x1FFF) {
         cpu.memory[addr & 0x07FF] = *data; // Writing to RAM
     } else if (addr >= 0x2000 && addr <= 0x3FFF) {
-        cpu.ppu_regs[(addr - 0x2000) % 8] = *data; // NES PPU registers
+        return cpu_ppu_write((addr - 0x2000) % 0x08, data); // NES PPU registers
+        //cpu.ppu_regs[(addr - 0x2000) % 8] = *data;
     } else if (addr >= 0x4000 && addr <= 0x4017) {
         cpu.apu_io_regs[addr - 0x4000] = *data;
     } else if (addr >= 0x4018 && addr <= 0x401F) {
@@ -79,14 +82,24 @@ void cpu_reset() {
     Need to implement IRQ and NMI
 */
     // 6502 is little endian
+    /* Load reset vector */
 	uint8_t lo, hi = 0;
     if (!cpu_read(0xFFFC, &lo) || !cpu_read(0xFFFD, &hi)) {
         printf("Could not read reset vector\n");
         cpu.fail();
     }
+
 	//cpu.pc = (hi << 8) | lo;
     cpu.pc = 0xC000;
-    cpu.cycles = 0;
+    //cpu.cycles = 0;
+    /*
+    if (!cpu_read(0xFFFE, &lo) || !cpu_read(0xFFFF, &hi)) {
+        printf("Could not read IRQ/BRK vector\n");
+        cpu.fail();
+    }
+
+    cpu.irq = (hi << 8) | lo;
+    */
 
 	// Reset registers
     cpu.asm_args = (char *) malloc(128 * sizeof(char));
@@ -98,10 +111,11 @@ void cpu_reset() {
     cpu.cycles = 0x07;
 
     // PPU Start up
-    cpu.ppu_regs[2] = 0x10;//(1 << 7) | (1 << 5);
+    ppu.ppu_regs[2] = 0x10;
+    //cpu.ppu_regs[2] = 0x10;//(1 << 7) | (1 << 5);
 }
 
-void cpu_clock() {
+uint8_t cpu_clock() {
     /*
         Using this reference: https://www.nesdev.org/wiki/CPU_unofficial_opcodes
         It looks like the last 2 bits of the opcode determine which "parts" of the CPU work
@@ -146,4 +160,22 @@ void cpu_clock() {
     //log_page(2);
     //log_page(3);
     printf("CPU.A: %X, CPU:PC %X\n", cpu.a, cpu.pc);
+    // NMI
+    if (cpu.nmi) {
+        uint16_t returnAddr = cpu.pc; // check if -1 or not
+        cpu.low = returnAddr & 0xFF;
+        cpu.high = (returnAddr >> 8) & 0xFF;
+        push(&cpu.high);
+        push(&cpu.low);
+        push(&cpu.status);
+        cpu.status &= ~irq;
+        
+        if (!cpu_read(0xFFFA, &cpu.low) || !cpu_read(0xFFFB, &cpu.high)) {
+            printf("Could not read NMI vector\n");
+            cpu.fail();
+        }
+
+        cpu.pc = (cpu.high << 8) | cpu.low;
+    }
+    return cpu.cycles - cpu.logCycles;
 }

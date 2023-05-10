@@ -14,7 +14,7 @@
     Nevertheless, tile animation can be done by swapping between pattern tables $0000 and $1000
 */
 
-bool mapper000_cpuRead(uint16_t addr, uint32_t *mapped_addr) {
+bool mapper000_cpuRead(uint16_t addr, uint16_t *mapped_addr) {
     // Don't care about Family basic PRG RAM
     // Just read ROM data
 	if (addr >= 0x8000 && addr <= 0xFFFF)
@@ -26,7 +26,7 @@ bool mapper000_cpuRead(uint16_t addr, uint32_t *mapped_addr) {
 	return false;
 }
 
-bool mapper000_ppuRead(uint16_t addr, uint32_t *mapped_addr) {
+bool mapper000_ppuRead(uint16_t addr, uint16_t *mapped_addr) {
     // Mapper 000 uses Pattern table 0 and 1
     // Address <= 0x1FFF
     // PPUCTRL bits 4-3 controls the swapping

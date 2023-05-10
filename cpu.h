@@ -59,7 +59,6 @@ struct CPU {
     uint8_t status;
     uint8_t sp;
     uint8_t *memory;
-    uint8_t ppu_regs[8];
     uint8_t apu_io_regs[0x18];
     uint32_t cycles;
     uint32_t logCycles;
@@ -71,6 +70,7 @@ struct CPU {
     char *instruction;
     char *asm_args;
     void (*fail)();
+    bool nmi;
 } cpu;
 
 enum flags{
@@ -86,10 +86,12 @@ enum flags{
 
 bool cpu_read(uint16_t addr, uint8_t *data);
 bool cpu_write(uint16_t addr, uint8_t *data);
-void cpu_clock();
+uint8_t cpu_clock();
 void cpu_reset();
 void handleControl();
 void handleALU();
 void handleRMW();
+void push(uint8_t *byte);
+void pull(uint8_t *byte);
 
 #endif

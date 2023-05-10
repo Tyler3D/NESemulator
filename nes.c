@@ -3,20 +3,21 @@
 #include <string.h>
 #include "cpu.h"
 #include "rom.h"
+#include "ppu.h"
 #include "logger.h"
 
 FILE *fp;
 
 void fail() {
     // Print nes test
-    printf("NES TEST RESULTS\n");
-    uint8_t byte;
-    READ_BYTE_FROM_ADDR(0x02, byte)
-    printf("Branch tests %X\n", byte);
-    READ_BYTE_FROM_ADDR(0x03, byte)
-    printf("Other tests %X\n", byte);
+    //printf("NES TEST RESULTS\n");
+    //uint8_t byte;
+    //READ_BYTE_FROM_ADDR(0x02, byte)
+    //printf("Branch tests %X\n", byte);
+    //READ_BYTE_FROM_ADDR(0x03, byte)
+    //printf("Other tests %X\n", byte);
 
-
+    free(ppu.vram);
     free(cpu.memory);
     if (rom.CHR_ROM_SIZE > 0)
         free(rom.CHR_ROM_data);
@@ -42,6 +43,7 @@ int main(int argc, char **argv) {
 
     if (!log_init()) {
         printf("Could not start logger\n");
+        fclose(fp);
         return 0;
     }
 
@@ -105,24 +107,37 @@ int main(int argc, char **argv) {
     if(!setMapper())
         goto rom_fail;
     
-    if (!(cpu.memory = calloc(0x07FF, sizeof(uint8_t)))) { // 2K internal Ram
+    if (!(cpu.memory = calloc(2048, sizeof(uint8_t)))) { // 2K internal Ram
         printf("Calloc failed\n");
         goto rom_fail;
     }
+
+    if (!(ppu.vram = calloc(2048, sizeof(uint8_t)))) { // 2K internal Ram
+        printf("Calloc failed\n");
+        goto ppu_fail;
+    }
+
     cpu.fail = &fail;
     cpu_reset();
+    ppu_reset();
+
+    uint8_t deltaCycles = 0;
 
     while (1) {
         // Need to add timing
-        // When we have a ppu
+        // When we have a PPU
         clocks++;
-        //ppu_clock();
         if ((clocks % 3) == 0) {
-            cpu_clock();
+            deltaCycles = cpu_clock();
         }
+        for (int i = 0; i < deltaCycles * 3; i++) {
+            clocks++;
+            ppu_clock();
+        }
+        deltaCycles = 0;
     }
 
-
+    ppu_fail:
     free(cpu.memory);
     rom_fail:
     if (rom.CHR_ROM_SIZE > 0)

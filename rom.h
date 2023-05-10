@@ -15,8 +15,8 @@ struct ROM {
     uint8_t *PRG_ROM_data;
     uint8_t *CHR_ROM_data;
     uint8_t mapperID;
-    bool (*readCPUMapper)(uint16_t, uint32_t *);
-    bool (*readPPUMapper)(uint16_t, uint32_t *);
+    bool (*readCPUMapper)(uint16_t, uint16_t *);
+    bool (*readPPUMapper)(uint16_t, uint16_t *);
 } rom;
 
 bool setMapper();
