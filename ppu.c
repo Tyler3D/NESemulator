@@ -60,6 +60,7 @@ void ppu_reset() {
       ppu.palettes[i] = 0;
    ppu.cycles = 0;
    ppu.scanline = 0; // Might be -1
+   ppu.framecount = 0;
 }
 
 /* 
@@ -164,6 +165,7 @@ bool cpu_ppu_read(uint16_t addr, uint8_t *data) {
       case PPUSTATUS: // $2002 PPUSTATUS
       /* TODO: address latch needs to be cleared. Which is used by PPUSCROLL and PPUADDR */
       *data = ppu.ppu_regs[PPUSTATUS];
+      CLEAR_VERTICAL_BLANK()
       break;
 
       case OAMADDR: // $2003 OAMADDR
@@ -238,14 +240,21 @@ bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
 }
 
 void ppu_clock() {
-   cpu.nmi = false;
+   if (ppu.scanline == -1) {
+      CLEAR_VERTICAL_BLANK()
+   }
+   ppu.cycles++;
 
    if (ppu.cycles >= DOTS) {
       ppu.scanline++;
       ppu.cycles = 0;
    }
-
-   if (ppu.scanline >= SCANLINES) {
+   if (ppu.scanline == SCREEN_HEIGHT && ppu.cycles == 0) {
+      if (IS_NMI_ENABLED())
+         cpu_nmi(); // Vertical blank period
+      SET_VERTICAL_BLANK()
+      ppu.framecount++;
+   } else if (ppu.scanline >= SCANLINES) {
       ppu.scanline = -1;
    }
 }

@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define SCREEN_WIDTH
-#define SCREEN_HEIGHT 
+#define SCREEN_WIDTH 256
+#define SCREEN_HEIGHT 240
 #define SCANLINES 261
 #define DOTS 341
 
@@ -38,14 +38,23 @@ PPU CTRL reg
 #define SPRITE_SIZE  ((ppu.ppu_regs[PPUCTRL] & (1 << 5)) > 0)
 #define IS_NMI_ENABLED() ((ppu.ppu_regs[PPUCTRL] & (1 << 7)) > 0) // Disable/Enable nmi during vertical blank
 
+typedef struct color {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b; 
+} color;
+
+
 struct PPU {
     uint8_t *memory;
     uint8_t *vram;
     uint8_t palettes[32]; // Might need to zero out somehow
-    uint16_t cycles;
-    uint16_t scanline;
+    int cycles;
+    int scanline;
+    int framecount;
     uint8_t ppu_regs[8];
     uint16_t vram_addr;
+    color screen[SCREEN_WIDTH][SCREEN_HEIGHT];
 } ppu;
 
 enum regs {
@@ -58,12 +67,6 @@ enum regs {
     PPUADDR = 6,
     PPUDATA = 7
 };
-
-typedef struct color {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b; 
-} color;
 
 void ppu_clock();
 bool cpu_ppu_read(uint16_t addr, uint8_t *data);

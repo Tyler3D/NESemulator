@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include "rom.h"
 #include "cpu.h"
 #include "ppu.h"
 #include "logger.h"
+#include "controller.h"
 
 /*
     NES CPU memory map
@@ -30,7 +30,15 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
         return cpu_ppu_read((addr - 0x2000) % 0x08, data); // NES PPU registers
         //*data = cpu.ppu_regs[(addr - 0x2000) % 8];
     } else if (addr >= 0x4000 && addr <= 0x4017) {
-        *data = cpu.apu_io_regs[addr - 0x4000];
+        if (addr == 0x4016) {
+            *data = readController(&player1);
+            printf("READING CONTROLLER 1: %X byte %X for button %X\n", player1.buttons, *data, player1.bitCounter);
+            fwrite("Reading controller\n", sizeof(char), strlen("Reading controller\n"), logfp);
+        }
+        else if (addr == 0x4017)
+            *data = readController(&player2);
+        else
+            *data = cpu.apu_io_regs[addr - 0x4000];
     } else if (addr >= 0x4018 && addr <= 0x401F) {
         // Need to figure out what this
         return true;
@@ -54,7 +62,13 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
         return cpu_ppu_write((addr - 0x2000) % 0x08, data); // NES PPU registers
         //cpu.ppu_regs[(addr - 0x2000) % 8] = *data;
     } else if (addr >= 0x4000 && addr <= 0x4017) {
-        cpu.apu_io_regs[addr - 0x4000] = *data;
+        if (addr == 0x4016) {
+            poll_controllers(data);
+            printf("Polling controller with data %X\n", *data);
+            fwrite("Polling controller\n", sizeof(char), strlen("Polling controller\n"), logfp);
+        }
+        else
+            cpu.apu_io_regs[addr - 0x4000] = *data;
     } else if (addr >= 0x4018 && addr <= 0x401F) {
         // Need to figure out what this
         return true;
@@ -89,8 +103,8 @@ void cpu_reset() {
         cpu.fail();
     }
 
-	//cpu.pc = (hi << 8) | lo;
-    cpu.pc = 0xC000;
+	cpu.pc = (hi << 8) | lo;
+    //cpu.pc = 0xC000;
     //cpu.cycles = 0;
     /*
     if (!cpu_read(0xFFFE, &lo) || !cpu_read(0xFFFF, &hi)) {
@@ -115,6 +129,27 @@ void cpu_reset() {
     //cpu.ppu_regs[2] = 0x10;//(1 << 7) | (1 << 5);
 }
 
+void cpu_nmi() {
+    char buf[256];
+    sprintf(buf, "Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
+    printf("Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
+    fwrite(buf, sizeof(char), strnlen(buf, 256), logfp);
+    uint16_t returnAddr = cpu.pc; // check if -1 or not
+    cpu.low = returnAddr & 0xFF;
+    cpu.high = (returnAddr >> 8) & 0xFF;
+    push(&cpu.high);
+    push(&cpu.low);
+    push(&cpu.status);
+    cpu.status &= ~irq;
+    
+    if (!cpu_read(0xFFFA, &cpu.low) || !cpu_read(0xFFFB, &cpu.high)) {
+        printf("Could not read NMI vector\n");
+        cpu.fail();
+    }
+
+    cpu.pc = (cpu.high << 8) | cpu.low;
+}
+
 uint8_t cpu_clock() {
     /*
         Using this reference: https://www.nesdev.org/wiki/CPU_unofficial_opcodes
@@ -124,6 +159,7 @@ uint8_t cpu_clock() {
         We split opcodes into groups so we can generalize instructions and avoid
         rewriting code
     */
+
     cpu.logPC = cpu.pc;
     cpu.logCycles = cpu.cycles;
     READ_BYTE_PC(cpu.opcode);
@@ -132,19 +168,19 @@ uint8_t cpu_clock() {
 
     if ((cpu.opcode % 4) == 0) {
         // Control instructions
-        printf("handle Control 0x%x\n", cpu.opcode);
+        //printf("handle Control 0x%x\n", cpu.opcode);
         handleControl();
     } else if ((cpu.opcode % 4) == 1) {
         // ALU instructions
-        printf("handle ALU 0x%x\n", cpu.opcode);
+        //printf("handle ALU 0x%x\n", cpu.opcode);
         handleALU();
     } else if ((cpu.opcode % 4) == 2) {
         // RMW operations
-        printf("handle RMW 0x%x\n", cpu.opcode);
+        //printf("handle RMW 0x%x\n", cpu.opcode);
         handleRMW();
     } else {
         // Illegal instructions
-        printf("Illegal instruction\n");
+        //printf("Illegal instruction\n");
         cpu.fail();
     }
     log_state();
@@ -159,23 +195,6 @@ uint8_t cpu_clock() {
     //log_page(1);
     //log_page(2);
     //log_page(3);
-    printf("CPU.A: %X, CPU:PC %X\n", cpu.a, cpu.pc);
-    // NMI
-    if (cpu.nmi) {
-        uint16_t returnAddr = cpu.pc; // check if -1 or not
-        cpu.low = returnAddr & 0xFF;
-        cpu.high = (returnAddr >> 8) & 0xFF;
-        push(&cpu.high);
-        push(&cpu.low);
-        push(&cpu.status);
-        cpu.status &= ~irq;
-        
-        if (!cpu_read(0xFFFA, &cpu.low) || !cpu_read(0xFFFB, &cpu.high)) {
-            printf("Could not read NMI vector\n");
-            cpu.fail();
-        }
-
-        cpu.pc = (cpu.high << 8) | cpu.low;
-    }
+    //printf("CPU.A: %X, CPU:PC %X\n", cpu.a, cpu.pc);
     return cpu.cycles - cpu.logCycles;
 }

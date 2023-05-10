@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h> // Debugging
+#include <stdio.h>
 
 #define SET_ZERO_FLAG(X) {\
     if (!(X))\
@@ -70,7 +71,6 @@ struct CPU {
     char *instruction;
     char *asm_args;
     void (*fail)();
-    bool nmi;
 } cpu;
 
 enum flags{
@@ -93,5 +93,6 @@ void handleALU();
 void handleRMW();
 void push(uint8_t *byte);
 void pull(uint8_t *byte);
+void cpu_nmi();
 
 #endif

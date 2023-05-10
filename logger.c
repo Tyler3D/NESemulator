@@ -1,7 +1,6 @@
 #include "logger.h"
 #include "cpu.h"
-#include <time.h>
-#include <string.h>
+#include "ppu.h"
 
 bool log_init() {
     time_t t = time(NULL);
@@ -45,7 +44,7 @@ void log_state() {
         break;
     }
     fwrite(buf, sizeof(char), strnlen(buf, 128), logfp);
-    fwrite(buf, sizeof(char), strnlen(buf, 128), stdout);
+    //fwrite(buf, sizeof(char), strnlen(buf, 128), stdout);
 }
 
 void log_fail() {

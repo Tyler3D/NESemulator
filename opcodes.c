@@ -109,7 +109,7 @@ void compare(uint8_t *first, uint8_t *second ) {
     SET_CARRY_FLAG(*first >= *second)
     SET_ZERO_FLAG(result)
     SET_NEG_FLAG(result)
-    printf("Comparing %X and %X\n", *first, *second);
+    //printf("Comparing %X and %X\n", *first, *second);
 }
 
 void push(uint8_t *byte) {
