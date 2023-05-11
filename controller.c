@@ -14,11 +14,6 @@ struct controller player2 = {
 };
 
 void poll_controllers(uint8_t *data) {
-    //if (player1.isPolling) {
-    //    player1.isPolling = false;
-    //    player2.isPolling = false;
-    //    return;
-    //}
     if (((*data) & 0x01) > 0) { // Only care about strobe bit
         player1.bitCounter = 0;
         player2.bitCounter = 0;
@@ -30,6 +25,11 @@ void poll_controllers(uint8_t *data) {
         player2.strobeBit = false;
         printf("Strobe bit off\n");
     }
+    if (player1.isPolling) {
+        player1.isPolling = false;
+        player2.isPolling = false;
+        return;
+    }
     // Somehow poll controllers through usb keyboard
     // controller_byte = whatever
     //if (player1.buttons > 0) {
@@ -39,8 +39,8 @@ void poll_controllers(uint8_t *data) {
         //SET_A_BUTTON(player1.buttons);
     //}
     //printf("Polling controllers %X\n", player1.buttons);
-    //player1.isPolling = true;
-    //player2.isPolling = true;
+    player1.isPolling = true;
+    player2.isPolling = true;
 }
 
 uint8_t readController(struct controller *player) {
@@ -48,7 +48,7 @@ uint8_t readController(struct controller *player) {
         return player->buttons & 0x01;
     if (player->bitCounter >= 8)
         return 1;
-    uint8_t returned = (((player->buttons & (1 << player->bitCounter))) > 0) ? 0 : 1;
+    uint8_t returned = (((player->buttons & (1 << player->bitCounter))) > 0) ? 1 : 0;
     player->bitCounter++;
     return returned;
 }
