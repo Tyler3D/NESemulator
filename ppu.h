@@ -49,6 +49,7 @@ struct PPU {
     uint8_t *memory;
     uint8_t *vram;
     uint8_t palettes[32]; // Might need to zero out somehow
+    uint8_t data_buffer;
     int cycles;
     int scanline;
     int framecount;

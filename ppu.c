@@ -1,6 +1,9 @@
 #include "ppu.h"
 #include "rom.h"
 #include "cpu.h"
+#include "logger.h"
+
+/*
 
 #define MAX_CROM
 #define CROM_WIDTH
@@ -154,6 +157,8 @@ void oam_to_buffer(){
 
 }
 
+*/
+
 void ppu_reset() {
    for (int i = 0; i < 8; i++)
       ppu.ppu_regs[i] = 0;
@@ -162,6 +167,7 @@ void ppu_reset() {
    ppu.cycles = 0;
    ppu.scanline = 0; // Might be -1
    ppu.framecount = 0;
+   ppu.data_buffer = 0;
 }
 
 /* 
@@ -182,26 +188,26 @@ bool ppu_read(uint16_t addr, uint8_t *data) {
         *data = rom.CHR_ROM_data[(mapped_addr & 0x0FFF) * ((mapped_addr & 0x1000) >> 12)];
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
          // VRAM
-         addr &= 0x0F00;
+         addr = (addr - 0x2000) % 0xF00;
          bool mirroring = rom.flag_6 & 0x01;
          if (mirroring) { // Vertical (horizontal arrangement)
             if (addr >= 0x0000 && addr <= 0x03FF)
-				   *data = ppu.vram[addr & 0x03FF];
+				   *data = ppu.vram[addr];
             if (addr >= 0x0400 && addr <= 0x07FF)
-               *data = ppu.vram[(addr & 0x03FF) * 2];
+               *data = ppu.vram[addr + 1024];
             if (addr >= 0x0800 && addr <= 0x0BFF)
-               *data = ppu.vram[addr & 0x03FF];
+               *data = ppu.vram[addr];
             if (addr >= 0x0C00 && addr <= 0x0FFF)
-               *data = ppu.vram[(addr & 0x03FF) * 2];
+               *data = ppu.vram[addr + 1024];
          } else { // horizontal (vertical arrangement)
             if (addr >= 0x0000 && addr <= 0x03FF)
-               *data = ppu.vram[addr & 0x03FF];
+               *data = ppu.vram[addr];
             if (addr >= 0x0400 && addr <= 0x07FF)
-               *data = ppu.vram[addr & 0x03FF];
+               *data = ppu.vram[addr];
             if (addr >= 0x0800 && addr <= 0x0BFF)
-               *data = ppu.vram[(addr & 0x03FF) * 2];
+               *data = ppu.vram[addr + 1024];
             if (addr >= 0x0C00 && addr <= 0x0FFF)
-               *data = ppu.vram[(addr & 0x03FF) * 2];
+               *data = ppu.vram[addr + 1024];
          }
     } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
          *data = ppu.palettes[addr & 0x20];
@@ -222,27 +228,28 @@ bool ppu_write(uint16_t addr, uint8_t *data) {
             return false;
          rom.CHR_ROM_data[(mapped_addr & 0x0FFF) * ((mapped_addr & 0x1000) >> 12)] = *data;
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
+         //ppu.vram[(addr - 0x2000) % 2048] = *data;
          // VRAM
-         addr &= 0x0F00;
+         addr = (addr - 0x2000) % 0xF00;
          bool mirroring = rom.flag_6 & 0x01;
          if (mirroring) { // Vertical (horizontal arrangement)
             if (addr >= 0x0000 && addr <= 0x03FF)
-				   ppu.vram[addr & 0x03FF] = *data;
+				   ppu.vram[addr] = *data;
             if (addr >= 0x0400 && addr <= 0x07FF)
-               ppu.vram[(addr & 0x03FF) * 2] = *data;
+               ppu.vram[addr + 1024] = *data;
             if (addr >= 0x0800 && addr <= 0x0BFF)
-               ppu.vram[addr & 0x03FF] = *data;
+               ppu.vram[addr] = *data;
             if (addr >= 0x0C00 && addr <= 0x0FFF)
-               ppu.vram[(addr & 0x03FF) * 2] = *data;
+               ppu.vram[addr + 1024] = *data;
          } else { // horizontal (vertical arrangement)
             if (addr >= 0x0000 && addr <= 0x03FF)
-               ppu.vram[addr & 0x03FF] = *data;
+               ppu.vram[addr] = *data;
             if (addr >= 0x0400 && addr <= 0x07FF)
-               ppu.vram[addr & 0x03FF] = *data;
+               ppu.vram[addr] = *data;
             if (addr >= 0x0800 && addr <= 0x0BFF)
-               ppu.vram[(addr & 0x03FF) * 2] = *data;
+               ppu.vram[addr + 1024] = *data;
             if (addr >= 0x0C00 && addr <= 0x0FFF)
-               ppu.vram[(addr & 0x03FF) * 2] = *data;
+               ppu.vram[addr + 1024] = *data;
          }
     } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
          ppu.palettes[addr & 0x20] = *data;
@@ -266,6 +273,7 @@ bool cpu_ppu_read(uint16_t addr, uint8_t *data) {
       case PPUSTATUS: // $2002 PPUSTATUS
       /* TODO: address latch needs to be cleared. Which is used by PPUSCROLL and PPUADDR */
       *data = ppu.ppu_regs[PPUSTATUS];
+      //ppu.vram_addr = 0;
       CLEAR_VERTICAL_BLANK()
       break;
 
@@ -286,8 +294,16 @@ bool cpu_ppu_read(uint16_t addr, uint8_t *data) {
       break;
 
       case PPUDATA: // $2007 PPUDATA
-      ppu_read(ppu.vram_addr, data); // Check
-      ppu.vram_addr += VRAM_INCREMENT ? 32 : 1;
+      if (ppu.vram_addr >= 0x3F00)
+         ppu_read(ppu.vram_addr, data);
+      else {
+         *data = ppu.data_buffer;
+         ppu_read(ppu.vram_addr, &ppu.data_buffer); // Check
+      }
+      log_byte("Address Read", ppu.vram_addr);
+      log_byte("Data", (uint16_t) (*data));
+      log_state();
+      ppu.vram_addr += (VRAM_INCREMENT ? 32 : 1);
       break;
 
       default:
@@ -325,13 +341,21 @@ bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
 
       case PPUADDR: // $2006 PPUADDR
       // Check
+      log_byte("Vram update Address", ppu.vram_addr);
+      log_byte("Data", (uint16_t) (*data));
       ppu.vram_addr = (ppu.vram_addr << 8) | *data;
       ppu.vram_addr &= 0x3FFF;
       break;
 
       case PPUDATA: // $2007 PPUDATA
+      log_byte("Address", ppu.vram_addr);
+      log_byte("Data", (uint16_t) (*data));
       ppu_write(ppu.vram_addr, data); // Check
-      ppu.vram_addr += VRAM_INCREMENT ? 32 : 1;
+      ppu.vram_addr += (VRAM_INCREMENT ? 32 : 1);
+      log_byte("Address", ppu.vram_addr);
+      log_byte("Data", (uint16_t) (*data));
+      log_namespace();
+      log_second_namespace();
       break;
 
       default:
@@ -357,5 +381,6 @@ void ppu_clock() {
       ppu.framecount++;
    } else if (ppu.scanline >= SCANLINES) {
       ppu.scanline = -1;
+      log_namespace();
    }
 }

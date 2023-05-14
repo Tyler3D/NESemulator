@@ -130,10 +130,10 @@ void cpu_reset() {
 }
 
 void cpu_nmi() {
-    char buf[256];
+    char buf[1024];
     sprintf(buf, "Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
     printf("Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
-    fwrite(buf, sizeof(char), strnlen(buf, 256), logfp);
+    fwrite(buf, sizeof(char), strnlen(buf, 1024), logfp);
     uint16_t returnAddr = cpu.pc; // check if -1 or not
     cpu.low = returnAddr & 0xFF;
     cpu.high = (returnAddr >> 8) & 0xFF;

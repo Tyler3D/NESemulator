@@ -35,7 +35,7 @@ void poll_controllers(uint8_t *data) {
     //if (player1.buttons > 0) {
     //    CLEAR_CONTROLLER(player1.buttons);
     //} else {
-    SET_START_BUTTON(player1.buttons);
+    //SET_START_BUTTON(player1.buttons);
         //SET_A_BUTTON(player1.buttons);
     //}
     //printf("Polling controllers %X\n", player1.buttons);
