@@ -44,6 +44,20 @@ typedef struct color {
 	uint8_t b; 
 } color;
 
+/*
+https://www.nesdev.org/wiki/PPU_OAM
+The OAM (Object Attribute Memory) is internal memory inside the PPU
+that contains a display list of up to 64 sprites, where each sprite's information occupies 4 bytes.
+We can emulate this as a struct with the x,y position of the tile, attributes (with pallete info and orientation), and index number
+When writing to OAM we only write a byte at a time (not a OAM_tile struct) so this is really a 256 byte array
+*/
+
+struct OAM_tile {
+    uint8_t y;
+    uint8_t id;
+    uint8_t attributes;
+    uint8_t x;
+};
 
 struct PPU {
     uint8_t *memory;
@@ -55,7 +69,14 @@ struct PPU {
     int framecount;
     uint8_t ppu_regs[8];
     uint16_t vram_addr;
+    uint8_t oam_addr;
     color screen[SCREEN_WIDTH][SCREEN_HEIGHT];
+    struct OAM_tile OAM[64];
+    uint8_t dma_page;
+    uint8_t dma_addr;
+    uint8_t dma_buffer;
+    bool dma;
+    bool dma_starting;
 } ppu;
 
 enum regs {
@@ -73,5 +94,6 @@ void ppu_clock();
 bool cpu_ppu_read(uint16_t addr, uint8_t *data);
 bool cpu_ppu_write(uint16_t addr, uint8_t *data);
 void ppu_reset();
+void ppu_dma(bool odd);
 
 #endif

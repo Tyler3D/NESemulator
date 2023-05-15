@@ -168,6 +168,11 @@ void ppu_reset() {
    ppu.scanline = 0; // Might be -1
    ppu.framecount = 0;
    ppu.data_buffer = 0;
+   ppu.dma_page = 0;
+   ppu.dma_addr = 0;
+   ppu.dma_buffer = 0;
+   ppu.dma = false;
+   ppu.dma_starting = false;
 }
 
 /* 
@@ -269,7 +274,32 @@ bool cpu_ppu_read(uint16_t addr, uint8_t *data) {
       case PPUMASK: // $2001 PPUMASK
       *data = 0;
       break;
-
+      
+      /*
+      Reflects the state of PPU
+      CPU often reads this register when trying to draw to screen.
+      There is a bit that tells the CPU it is safe to draw
+      From https://www.nesdev.org/wiki/PPU_registers
+      7  bit  0
+      ---- ----
+      VSO. ....
+      |||| ||||
+      |||+-++++- PPU open bus. Returns stale PPU bus contents.
+      ||+------- Sprite overflow. The intent was for this flag to be set
+      ||         whenever more than eight sprites appear on a scanline, but a
+      ||         hardware bug causes the actual behavior to be more complicated
+      ||         and generate false positives as well as false negatives; see
+      ||         PPU sprite evaluation. This flag is set during sprite
+      ||         evaluation and cleared at dot 1 (the second dot) of the
+      ||         pre-render line.
+      |+-------- Sprite 0 Hit.  Set when a nonzero pixel of sprite 0 overlaps
+      |          a nonzero background pixel; cleared at dot 1 of the pre-render
+      |          line.  Used for raster timing.
+      +--------- Vertical blank has started (0: not in vblank; 1: in vblank).
+               Set at dot 1 of line 241 (the line *after* the post-render
+               line); cleared after reading $2002 and at dot 1 of the
+               pre-render line.
+      */
       case PPUSTATUS: // $2002 PPUSTATUS
       /* TODO: address latch needs to be cleared. Which is used by PPUSCROLL and PPUADDR */
       *data = ppu.ppu_regs[PPUSTATUS];
@@ -313,6 +343,7 @@ bool cpu_ppu_read(uint16_t addr, uint8_t *data) {
 }
 
 bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
+   uint8_t *oam = (uint8_t *) ppu.OAM;
    switch (addr) {
       case PPUCTRL: // $2000 Control reg
       ppu.ppu_regs[PPUCTRL] = *data;
@@ -328,11 +359,12 @@ bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
       break;
 
       case OAMADDR: // $2003 OAMADDR
-
+      ppu.oam_addr = *data;
       break;
 
       case OAMDATA: // $2004 OAMDATA
-
+      oam[ppu.oam_addr] = *data;
+      ppu.oam_addr++;
       break;
 
       case PPUSCROLL: // $2005 PPUSCROLL
@@ -364,6 +396,22 @@ bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
    return true;
 }
 
+void ppu_dma(bool odd) {
+   printf("DMA %x %x %x\n", ppu.dma_page, ppu.dma_addr, odd);
+   if (odd) {
+      uint16_t addr = ((uint16_t) ppu.dma_page) << 8 | ppu.dma_addr;
+      cpu_read(addr, &ppu.dma_buffer);
+   } else {
+      uint8_t *oam = (uint8_t *) ppu.OAM;
+      oam[ppu.dma_addr] = ppu.dma_buffer;
+      ppu.dma_addr++;
+      if (ppu.dma_addr == 0x00) { // When we wrap around 0xFF bytes have been copied
+         ppu.dma = false;
+         ppu.dma_starting = false;
+      }
+   }
+}
+
 void ppu_clock() {
    if (ppu.scanline == -1) {
       CLEAR_VERTICAL_BLANK()
@@ -375,8 +423,12 @@ void ppu_clock() {
       ppu.cycles = 0;
    }
    if (ppu.scanline == SCREEN_HEIGHT && ppu.cycles == 0) {
+      /*
+      PPU has a flag (which can be set by CPU) when it should not perform
+      a non maskable interrupt (NMI)
+      */
       if (IS_NMI_ENABLED())
-         cpu_nmi(); // Vertical blank period
+         cpu_nmi();
       SET_VERTICAL_BLANK()
       ppu.framecount++;
    } else if (ppu.scanline >= SCANLINES) {

@@ -62,12 +62,15 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
         return cpu_ppu_write((addr - 0x2000) % 0x08, data); // NES PPU registers
         //cpu.ppu_regs[(addr - 0x2000) % 8] = *data;
     } else if (addr >= 0x4000 && addr <= 0x4017) {
-        if (addr == 0x4016) {
+        if (addr == 0x4014) {// DMA
+            ppu.dma = true;
+            ppu.dma_page = *data;
+            ppu.dma_starting = false;
+        } else if (addr == 0x4016) {
             poll_controllers(data);
             printf("Polling controller with data %X\n", *data);
             fwrite("Polling controller\n", sizeof(char), strlen("Polling controller\n"), logfp);
-        }
-        else
+        } else
             cpu.apu_io_regs[addr - 0x4000] = *data;
     } else if (addr >= 0x4018 && addr <= 0x401F) {
         // Need to figure out what this
@@ -128,6 +131,12 @@ void cpu_reset() {
     ppu.ppu_regs[2] = 0x10;
     //cpu.ppu_regs[2] = 0x10;//(1 << 7) | (1 << 5);
 }
+
+/*
+Perform a non maskable interrupt (NMI). The PPU calls this when it scans below the screen
+The CPU finishes its clock and responds. It pushes the current PC and status register and
+changes the PC to the address in 0xFFFA-0xFFFB (NMI vector) in the cartridge.
+*/
 
 void cpu_nmi() {
     char buf[1024];

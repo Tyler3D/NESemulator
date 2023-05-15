@@ -51,11 +51,12 @@ int getAddressingMode() {
 }
 
 uint8_t zeropage(uint16_t *addr, uint8_t offset) {
-    uint8_t byte;
+    uint8_t byte = 0;
     READ_BYTE_FROM_ADDR(cpu.pc, cpu.low)
     cpu.low += offset;
     SET_ADDR(*addr, 0)
-    READ_BYTE_FROM_ADDR(*addr, byte)
+    if (strncmp("STA", cpu.instruction, 3) != 0)
+        READ_BYTE_FROM_ADDR(*addr, byte)
     cpu.pc++;
     cpu.asm_argc = 2;
     return byte;
@@ -78,11 +79,15 @@ But this function could probably implement it as well
 */
 
 uint8_t absolute(uint16_t *addr, uint8_t offset) {
-    uint8_t byte;
+    uint8_t byte = 0;
     READ_BYTE_PC(cpu.low)
     READ_BYTE_PC(cpu.high)
     SET_ADDR(*addr, offset)
-    READ_BYTE_FROM_ADDR(*addr, byte)
+    if (strncmp("STA", cpu.instruction, 3) != 0)
+        READ_BYTE_FROM_ADDR(*addr, byte)
+    else {
+        fwrite("STA thing\n", sizeof(char), strlen("STA thing\n"), logfp);
+    }
     cpu.asm_argc = 3;
     return byte;
 }
@@ -896,7 +901,8 @@ void handleALU() {
         READ_BYTE_FROM_ADDR(addr, cpu.low)
         READ_BYTE_FROM_ADDR(((addr & 0xFF) == 0xFF) ? (addr & 0xFF00) : addr + 1, cpu.high)
         SET_ADDR(addr, 0)
-        READ_BYTE_FROM_ADDR(addr, byte)
+        if (func != &STA)
+            READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
         //assembly = "(d,x)";
         cpu.asm_argc = 2;
@@ -936,7 +942,8 @@ void handleALU() {
         if ((GET_PAGE_NUM(addr + cpu.y) != GET_PAGE_NUM(addr)) || func == STA) // STA always does a lot of cycles
             cpu.cycles += 1;
         addr += cpu.y;
-        READ_BYTE_FROM_ADDR(addr, byte)
+        if (func != STA)
+            READ_BYTE_FROM_ADDR(addr, byte)
         cpu.pc++;
         
         cpu.asm_argc = 3;
