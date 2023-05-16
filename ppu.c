@@ -262,7 +262,6 @@ bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
 }
 
 void ppu_dma(bool odd) {
-   printf("DMA %x %x %x\n", ppu.dma_page, ppu.dma_addr, odd);
    if (odd) {
       uint16_t addr = ((uint16_t) ppu.dma_page) << 8 | ppu.dma_addr;
       cpu_read(addr, &ppu.dma_buffer);

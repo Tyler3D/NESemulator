@@ -142,7 +142,6 @@ int main(int argc, char **argv) {
                 On an even CPU clock, we read byte
                 On an odd CPU clock, we store the byte in the OAM buffer
                 */
-                printf("DMA %x %x %lld %d\n", ppu.dma_page, ppu.dma_addr, clocks, clocks % 2);
                 //printf("DMA start %x\n", ppu.dma_starting);
                 if ((ppu.dma_starting == 0) && ((clocks % 2) == 1)) {
                 // Start dma on even clock cycle
@@ -155,7 +154,6 @@ int main(int argc, char **argv) {
             }
         }
         for (int i = 0; i < deltaCycles * 3; i++) {
-            clocks++;
             ppu_clock();
         }
         deltaCycles = 0;

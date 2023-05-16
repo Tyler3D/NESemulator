@@ -1,3 +1,5 @@
+#include "ppu.h"
+
 // Implement later; for now just send b/w
 pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t prio){
 	pixel rgb;
@@ -9,7 +11,7 @@ pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t prio){
 }
 
 void pixel_to_buffer(pixel pixel, uint8_t x, uint8_t y){
-	if (pixel.a > buffer[y * SCREEN_WIDTH + x] && buffer[y * SCREEN_WIDTH.x].prio <= pixel.prio){
+	if (buffer[y * SCREEN_WIDTH + x].prio <= pixel.prio){
 		buffer[y * SCREEN_WIDTH + x] = pixel;
 	}
 }
@@ -17,10 +19,10 @@ void pixel_to_buffer(pixel pixel, uint8_t x, uint8_t y){
 // Hardcoded 8x8 tile get that puts it into buffer
 // Palette not implemented
 // Rotation not yet implemented
-void tile_to_buffer(uint32_t addr, uint8_t palette, uint8_t prio, uint8_t x, uint8_t y, uint8_t rotation){
-	uint8_t x_offset;
-	uint8_t y_offset;
-	for (int i = addr; i < addr + 8; i++){
+void tile_to_buffer(uint32_t addr, uint8_t palette, uint8_t prio, uint8_t x, uint8_t y, uint8_t rotation) {
+	uint8_t x_offset = 0;
+	uint8_t y_offset = 0;
+	for (int i = addr; i < addr + 8; i++) {
 		uint8_t value;
 		uint8_t left;
 		uint8_t right;
@@ -28,8 +30,8 @@ void tile_to_buffer(uint32_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 		ppu_read(i, &left);
 		ppu_read(i + 8, &right);
 		for (int j = 7; j >= 0; j--){
-			uint8_t bit_left = (left >> j) && 1;
-			uint8_t bit_right = (right >> j) && 1;
+			uint8_t bit_left = (left >> j) & 1;
+			uint8_t bit_right = (right >> j) & 1;
 			if (bit_left & bit_right){
 				value = 3;
 			}
@@ -43,7 +45,7 @@ void tile_to_buffer(uint32_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 			// Note palette is set to 0 for temporary purposes
 			if (value > 0){
 				pixel rgb = convert_rgb(0, value, prio);
-				pixel_to_buffer(rgb, prio, x + x_offset, y + y_offset)
+				pixel_to_buffer(rgb, x + x_offset, y + y_offset);
 			}
 		}
 		// Note palette is set to 0 for temporary purposes
@@ -77,11 +79,10 @@ void tile_to_buffer(uint32_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 	// 		tile_to_buffer(sprite_addr, sprite && 0x3, priority, x, y, rotation);
 	// 		break;
 	// }
-}
 
 // Specific to sprites; background code has something else
 // Also for 16x8 mode we use size; the selection of tile/rotation differs
-void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x){
+void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x) {
 	uint32_t sprite_addr;
 	if (id & 1){
 		sprite_addr = 0x1000 + ((addr >> 1) * 16);
@@ -90,24 +91,24 @@ void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x){
 
 	uint8_t rotation = id >> 6;
 	uint8_t priority;
-	if ((sprite << 5) & 1){
+	if ((id << 5) & 1){
 		priority = 0;
 	}
 	else priority = 2;
 	if (y > 0){
-		y--
+		y--;
 	}
 	else return;
-	tile_to_buffer(sprite_addr, id && 0x3, priority, x, y, rotation);
+	tile_to_buffer(sprite_addr, id & 0x3, priority, x, y, rotation);
 }
 
-void oam_to_buffer(){
+void oam_to_buffer() {
 	uint8_t y;
 	uint8_t id;
 	uint8_t attributes;
 	uint8_t x; 
 	uint8_t *oam = (uint8_t *) ppu.OAM;
-	for (int i = 0; i < 256; i = i + 4){
+	for (int i = 0; i < 256; i = i + 4) {
 		y = oam[i];
 		id = oam[i + 1];
 		attributes = oam[i + 2];
@@ -118,9 +119,9 @@ void oam_to_buffer(){
 	}
 }
 
-void nametable_to_buffer(){
-	uint8_t x;
-	uint8_t y;
+void nametable_to_buffer() {
+	uint8_t x = 0;
+	uint8_t y = 0;
 	uint8_t byte;
 	// Note: addr calculation is nametable_base + background_base + nametable_byte;
 	uint32_t addr;
@@ -138,5 +139,3 @@ void nametable_to_buffer(){
 		}
 	}
 }
-
-*/

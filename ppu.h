@@ -98,5 +98,7 @@ bool cpu_ppu_read(uint16_t addr, uint8_t *data);
 bool cpu_ppu_write(uint16_t addr, uint8_t *data);
 void ppu_reset();
 void ppu_dma(bool odd);
+bool ppu_read(uint16_t addr, uint8_t *data);
+bool ppu_write(uint16_t addr, uint8_t *data);
 
 #endif

@@ -95,6 +95,20 @@ void log_second_namespace() {
     fwrite(buf, sizeof(char), strlen(buf), logfp);
 }
 
+/*
+void log_namespace() {
+    char buf[4096] = {0};
+    for (uint8_t y = 0; y < 30; y++) {
+        for (uint8_t x = 0; x < 32; x++) {
+            sprintf(buf + strlen(buf), "%-2x ", ppu.oam[(y * 32) + x]);
+        }
+        sprintf(buf + strlen(buf), "\n");
+    }
+    fwrite("Printing namespace\n", sizeof(char), strlen("Printing namespace\n"), logfp);
+    fwrite(buf, sizeof(char), strlen(buf), logfp);
+}
+*/
+
 void log_byte(char *buf, uint16_t byte) {
     fflush(logfp);
     char buffer[4096];
