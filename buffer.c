@@ -26,7 +26,7 @@ void tile_to_buffer(uint32_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 		uint8_t right;
 
 		ppu_read(i, &left);
-		ppu_read(i + 8, &left);
+		ppu_read(i + 8, &right);
 		for (int j = 7; j >= 0; j--){
 			uint8_t bit_left = (left >> j) && 1;
 			uint8_t bit_right = (right >> j) && 1;
@@ -83,12 +83,12 @@ void tile_to_buffer(uint32_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 // Also for 16x8 mode we use size; the selection of tile/rotation differs
 void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x){
 	uint32_t sprite_addr;
-	if (sprite & 1){
+	if (id & 1){
 		sprite_addr = 0x1000 + ((addr >> 1) * 16);
 	}
 	else sprite_addr = (addr >> 1) * 16; 
 
-	uint8_t rotation = sprite >> 6;
+	uint8_t rotation = id >> 6;
 	uint8_t priority;
 	if ((sprite << 5) & 1){
 		priority = 0;
@@ -98,7 +98,7 @@ void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x){
 		y--
 	}
 	else return;
-	tile_to_buffer(sprite_addr, sprite && 0x3, priority, x, y, rotation);
+	tile_to_buffer(sprite_addr, id && 0x3, priority, x, y, rotation);
 }
 
 void oam_to_buffer(){
@@ -114,6 +114,22 @@ void oam_to_buffer(){
 		x = oam[i + 3];
 		if (y && id && attributes && x) {
 			sprite_to_buffer(y, id, attributes, x);
+		}
+	}
+}
+
+void nametable_to_buffer(){
+	uint8_t x;
+	uint8_t y;
+	uint8_t byte;
+	for (int i = 0; i < 960; i++){
+		ppu_read(0x2000 + i, &byte);
+		
+
+		x++;
+		if (x >= 240){
+			x = 0;
+			y++;
 		}
 	}
 }
