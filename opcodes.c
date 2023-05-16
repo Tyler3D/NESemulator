@@ -55,7 +55,12 @@ uint8_t zeropage(uint16_t *addr, uint8_t offset) {
     READ_BYTE_FROM_ADDR(cpu.pc, cpu.low)
     cpu.low += offset;
     SET_ADDR(*addr, 0)
-    if (strncmp("STA", cpu.instruction, 3) != 0)
+    if (cpu.opcode != 0x84 &&
+        cpu.opcode != 0x94 &&
+        cpu.opcode != 0x85 &&
+        cpu.opcode != 0x95 &&
+        cpu.opcode != 0x86 &&
+        cpu.opcode != 0x96) // STA, STX, STY shouldn't read byte. zeropage + zeropage, x
         READ_BYTE_FROM_ADDR(*addr, byte)
     cpu.pc++;
     cpu.asm_argc = 2;
@@ -83,11 +88,10 @@ uint8_t absolute(uint16_t *addr, uint8_t offset) {
     READ_BYTE_PC(cpu.low)
     READ_BYTE_PC(cpu.high)
     SET_ADDR(*addr, offset)
-    if (strncmp("STA", cpu.instruction, 3) != 0)
+    if (cpu.opcode != 0x8D &&
+        cpu.opcode != 0x8C &&
+        cpu.opcode != 0x8E) // STA, STX, STY shouldn't read byte
         READ_BYTE_FROM_ADDR(*addr, byte)
-    else {
-        fwrite("STA thing\n", sizeof(char), strlen("STA thing\n"), logfp);
-    }
     cpu.asm_argc = 3;
     return byte;
 }
@@ -1090,7 +1094,7 @@ void handleRMW() {
 
         case 0x1E: // absolute, X or absolute, Y
         // Need to figure out how many cycles
-        if (cpu.opcode == 0xBE) {// LDX uses absolute, Y
+        if (cpu.opcode == 0xBE) { // LDX uses absolute, Y
             byte = absolute(&addr, cpu.y);
             if ((GET_PAGE_NUM(addr - cpu.y) != GET_PAGE_NUM(addr)))
                 cpu.cycles += 1;
