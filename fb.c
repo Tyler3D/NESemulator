@@ -10,6 +10,7 @@
  */
 
 #include "fb.h"
+#include "ppu.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -21,6 +22,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <inttypes.h>
+
 struct fb_fix_screeninfo finfo;
 struct fb_var_screeninfo vinfo;
 size_t size;
@@ -108,12 +110,8 @@ void nes_screen()
       // 81, 245, 125
 
       setPixel(x, y, 81, 245, 125, 0);
+      setPixel(x, y, buffer[y * SCREEN_WIDTH + x].r, buffer[y * SCREEN_WIDTH + x].b, buffer[y * SCREEN_WIDTH + x].g, 0);
       // setPixel(x, y, screen[y][x].r, screen[y][x].b, screen[y][x].g, 0);
     }
   }
-}
-
-int main()
-{
-  nes_screen();
 }

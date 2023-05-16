@@ -100,5 +100,8 @@ void ppu_reset();
 void ppu_dma(bool odd);
 bool ppu_read(uint16_t addr, uint8_t *data);
 bool ppu_write(uint16_t addr, uint8_t *data);
+void oam_to_buffer();
+void nametable_to_buffer();
+void nes_screen();
 
 #endif

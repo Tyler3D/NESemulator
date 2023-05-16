@@ -293,6 +293,9 @@ void ppu_clock() {
       */
       if (IS_NMI_ENABLED())
          cpu_nmi();
+      nametable_to_buffer();
+      oam_to_buffer();
+      nes_screen();
       SET_VERTICAL_BLANK()
       ppu.framecount++;
    } else if (ppu.scanline >= SCANLINES) {

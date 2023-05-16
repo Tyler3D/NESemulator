@@ -24,7 +24,7 @@ C000  EA        NOP                                   A:FF X:0  Y:0  Status:24 S
 */
 
 void log_state() {
-    //return;
+    return;
     char buf[128];
     switch (cpu.asm_argc) {
         case 3:
@@ -72,6 +72,7 @@ void log_page(uint16_t pageNum) {
 }
 
 void log_namespace() {
+    return;
     char buf[4096] = {0};
     for (uint8_t y = 0; y < 30; y++) {
         for (uint8_t x = 0; x < 32; x++) {
@@ -84,6 +85,7 @@ void log_namespace() {
 }
 
 void log_second_namespace() {
+    return;
     char buf[4096] = {0};
     for (uint8_t y = 0; y < 30; y++) {
         for (uint8_t x = 0; x < 32; x++) {
@@ -110,6 +112,7 @@ void log_namespace() {
 */
 
 void log_byte(char *buf, uint16_t byte) {
+    return;
     fflush(logfp);
     char buffer[4096];
     sprintf(buffer, "%s %x\n", buf, byte);

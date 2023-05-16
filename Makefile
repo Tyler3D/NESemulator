@@ -1,6 +1,6 @@
 CFLAGS = -Wall
 
-OBJECTS = nes.o rom.o cpu.o opcodes.o logger.o ppu.o controller.o buffer.o
+OBJECTS = nes.o rom.o cpu.o opcodes.o logger.o ppu.o controller.o buffer.o fb.o
 
 nes : $(OBJECTS)
 	cc -Wall -g $(CFLAGS) -o nes_emu $(OBJECTS)
@@ -13,6 +13,7 @@ logger.o : logger.c logger.h
 ppu.o : ppu.c cpu.h ppu.h rom.h
 controller.o: controller.c controller.h cpu.h
 buffer.o : buffer.c ppu.h
+fb.o: fb.c ppu.h fb.h
 
 .PHONY : clean
 clean :
