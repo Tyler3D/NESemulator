@@ -4,6 +4,7 @@
 #include "cpu.h"
 #include "rom.h"
 #include "ppu.h"
+#include "buffer.c"
 #include "logger.h"
 
 FILE *fp;

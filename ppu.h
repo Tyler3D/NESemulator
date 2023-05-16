@@ -38,11 +38,12 @@ PPU CTRL reg
 #define SPRITE_SIZE  ((ppu.ppu_regs[PPUCTRL] & (1 << 5)) > 0)
 #define IS_NMI_ENABLED() ((ppu.ppu_regs[PPUCTRL] & (1 << 7)) > 0) // Disable/Enable nmi during vertical blank
 
-typedef struct color {
+typedef struct pixel {
 	uint8_t r;
 	uint8_t g;
 	uint8_t b; 
-} color;
+    uint8_t prio;
+};
 
 /*
 https://www.nesdev.org/wiki/PPU_OAM
@@ -70,7 +71,7 @@ struct PPU {
     uint8_t ppu_regs[8];
     uint16_t vram_addr;
     uint8_t oam_addr;
-    color screen[SCREEN_WIDTH][SCREEN_HEIGHT];
+    pixel screen[SCREEN_WIDTH][SCREEN_HEIGHT];
     struct OAM_tile OAM[64];
     uint8_t dma_page;
     uint8_t dma_addr;
@@ -89,6 +90,8 @@ enum regs {
     PPUADDR = 6,
     PPUDATA = 7
 };
+
+pixel buffer[SCREEN_HEIGHT * SCREEN_WIDTH];
 
 void ppu_clock();
 bool cpu_ppu_read(uint16_t addr, uint8_t *data);
