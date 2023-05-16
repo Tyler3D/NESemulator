@@ -122,12 +122,17 @@ void nametable_to_buffer(){
 	uint8_t x;
 	uint8_t y;
 	uint8_t byte;
+	// Note: addr calculation is nametable_base + background_base + nametable_byte;
+	uint32_t addr;
 	for (int i = 0; i < 960; i++){
 		ppu_read(0x2000 + i, &byte);
-		
-
+		// Calculate addr later!
+		addr = byte * 16;
+		// Addr, palette, prio, x, y, rotation
+		// Palette needs to be implemented; prio and rotation are fixed
+		tile_to_buffer(addr, 0, 1, x, y, 0);
 		x++;
-		if (x >= 240){
+		if (x >= 30){
 			x = 0;
 			y++;
 		}
