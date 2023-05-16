@@ -10,7 +10,7 @@
 #define NES_SCRN_H (uint32_t)256
 #define NES_SCRN_W (uint32_t)240
 
-extern int fbopen(void);
-extern void nes_screen();
+int fbopen(void);
+void nes_screen();
 
 #endif

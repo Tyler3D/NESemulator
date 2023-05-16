@@ -1,6 +1,7 @@
 #include "ppu.h"
 #include "rom.h"
 #include "cpu.h"
+#include "fb.h"
 #include "logger.h"
 
 /*

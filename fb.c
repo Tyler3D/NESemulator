@@ -100,8 +100,8 @@ void setPixel(uint32_t x, uint32_t y, uint32_t r,
 void nes_screen()
 // void nes_screen(color **screen)
 {
-  printf("Framebuffer %d", fbopen());
-  printf("Framebuffer %d", fb_vinfo.yres);
+  //printf("Framebuffer %d", fbopen());
+  //printf("Framebuffer %d", fb_vinfo.yres);
   uint32_t x, y;
   for (y = 0; y < NES_SCRN_H * SCREEN_SCALER; y += SCREEN_SCALER)
   {

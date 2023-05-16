@@ -5,6 +5,7 @@
 #include "rom.h"
 #include "ppu.h"
 #include "logger.h"
+#include "fb.h"
 
 FILE *fp;
 
@@ -32,6 +33,11 @@ int main(int argc, char **argv) {
     long long clocks = 0;
     if (argc != 2) {
         printf("Usage: %s <game.nes>\n", argv[0]);
+        return 0;
+    }
+
+    if (!fbopen()) {
+        printf("Frame buffer isn't open\n");
         return 0;
     }
 
