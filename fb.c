@@ -27,7 +27,6 @@ struct fb_fix_screeninfo finfo;
 struct fb_var_screeninfo vinfo;
 size_t size;
 uint8_t *fbp;
-#include "ppu.h"
 
 #define FBDEV "/dev/fb0"
 #define BITS_PER_PIXEL 32
