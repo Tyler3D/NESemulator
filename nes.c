@@ -4,6 +4,7 @@
 #include "cpu.h"
 #include "rom.h"
 #include "ppu.h"
+#include "buffer.c"
 #include "logger.h"
 
 FILE *fp;
@@ -125,16 +126,41 @@ int main(int argc, char **argv) {
 
     while (1) {
         // Need to add timing
-        // When we have a PPU
-        clocks++;
+        //printf("clock count %lld\n", clocks);
         if ((clocks % 3) == 0) {
-            deltaCycles = cpu_clock();
+            // Run CPU
+            if (!ppu.dma)
+                deltaCycles = cpu_clock();
+            else {
+                /*
+                DMA is ongoing
+                During this process the CPU is suspended
+                The CPU reads an entire page (256 bytes)
+                and fills up the OAM buffer on the PPU
+                The process only starts on an even CPU clock cycle
+                So we have dma_starting to tell us when we start
+                ppu_dma will handle the dma per clock
+                On an even CPU clock, we read byte
+                On an odd CPU clock, we store the byte in the OAM buffer
+                */
+                printf("DMA %x %x %lld %d\n", ppu.dma_page, ppu.dma_addr, clocks, clocks % 2);
+                //printf("DMA start %x\n", ppu.dma_starting);
+                if ((ppu.dma_starting == 0) && ((clocks % 2) == 1)) {
+                // Start dma on even clock cycle
+                    //printf("DMA START\n");
+                    ppu.dma_starting = true;
+                } else if (ppu.dma_starting) {
+                    ppu_dma((clocks % 2 == 1) ? 1 : 0);
+                }
+                deltaCycles = 1;
+            }
         }
         for (int i = 0; i < deltaCycles * 3; i++) {
             clocks++;
             ppu_clock();
         }
         deltaCycles = 0;
+        clocks++;
     }
 
     ppu_fail:

@@ -24,6 +24,7 @@ C000  EA        NOP                                   A:FF X:0  Y:0  Status:24 S
 */
 
 void log_state() {
+    //return;
     char buf[128];
     switch (cpu.asm_argc) {
         case 3:
@@ -68,4 +69,35 @@ void log_page(uint16_t pageNum) {
     sprintf(buf, "\n");
     fwrite(buf, sizeof(char), strnlen(buf, 128), logfp);
     fwrite(buf, sizeof(char), strnlen(buf, 128), stdout);
+}
+
+void log_namespace() {
+    char buf[4096] = {0};
+    for (uint8_t y = 0; y < 30; y++) {
+        for (uint8_t x = 0; x < 32; x++) {
+            sprintf(buf + strlen(buf), "%-2x ", ppu.vram[(y * 32) + x]);
+        }
+        sprintf(buf + strlen(buf), "\n");
+    }
+    fwrite("Printing namespace\n", sizeof(char), strlen("Printing namespace\n"), logfp);
+    fwrite(buf, sizeof(char), strlen(buf), logfp);
+}
+
+void log_second_namespace() {
+    char buf[4096] = {0};
+    for (uint8_t y = 0; y < 30; y++) {
+        for (uint8_t x = 0; x < 32; x++) {
+            sprintf(buf + strlen(buf), "%-2x ", ppu.vram[(y * 32) + x + 1024]);
+        }
+        sprintf(buf + strlen(buf), "\n");
+    }
+    fwrite("Printing namespace\n", sizeof(char), strlen("Printing namespace\n"), logfp);
+    fwrite(buf, sizeof(char), strlen(buf), logfp);
+}
+
+void log_byte(char *buf, uint16_t byte) {
+    fflush(logfp);
+    char buffer[4096];
+    sprintf(buffer, "%s %x\n", buf, byte);
+    fwrite(buffer, sizeof(char), strnlen(buffer, 4096), logfp);
 }
