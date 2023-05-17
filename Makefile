@@ -18,3 +18,6 @@ fb.o: fb.c ppu.h fb.h
 .PHONY : clean
 clean :
 	rm -rf *.o nes_emu *.txt
+	
+run: nes
+	nes_emu ./nestest.nes
