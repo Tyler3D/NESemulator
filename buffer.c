@@ -11,6 +11,7 @@ pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t prio) {
 }
 
 void pixel_to_buffer(pixel pixel, uint16_t x, uint16_t y) {
+	printf("X: %d, Y: %d, Pixel: %d", pixel.r);
 	if (buffer[y * SCREEN_WIDTH + x].prio <= pixel.prio){
 		buffer[y * SCREEN_WIDTH + x] = pixel;
 	}
