@@ -193,17 +193,9 @@ uint8_t cpu_clock() {
         cpu.fail();
     }
     log_state();
-    /*
-    Currently PC: D959 gives the wrong result
-    D959  B1 FF     LDA ($FF),Y = 0146 @ 0245 = 12  A:01 X:65 Y:FF P:E5 SP:FA PPU: 77,215 CYC:8824
-    A is supposed to become 12 after this.
-    But LDA $0146 is 0 in this implemention
-    We are logging page 1 for each instruction to debug this
-    */
     //log_page(0);
     //log_page(1);
     //log_page(2);
     //log_page(3);
-    //printf("CPU.A: %X, CPU:PC %X\n", cpu.a, cpu.pc);
     return cpu.cycles - cpu.logCycles;
 }

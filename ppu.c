@@ -52,11 +52,11 @@ bool ppu_read(uint16_t addr, uint8_t *data) {
     //printf("Attempting to read %X\n", addr);
     if (addr >= 0x0000 && addr <= 0x1FFF) {
         // Pattern table 0/1
-         if (!rom.readCPUMapper(addr, &mapped_addr))
+         if (!rom.readPPUMapper(addr, &mapped_addr))
             return false;
          // Mapper 000 doesn't support CHR_RAM
          // We can implement CHR_RAM later after mapper 000 works
-        *data = rom.CHR_ROM_data[(mapped_addr & 0x0FFF) * ((mapped_addr & 0x1000) >> 12)];
+        *data = rom.CHR_ROM_data[mapped_addr]; //(mapped_addr & 0x0FFF) * ((mapped_addr & 0x1000) >> 12)];
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
          // VRAM
          addr = (addr - 0x2000) % 0xF00;
@@ -95,9 +95,9 @@ bool ppu_write(uint16_t addr, uint8_t *data) {
     //printf("Attempting to read %X\n", addr);
     if (addr >= 0x0000 && addr <= 0x1FFF) {
         // Pattern table 0/1
-         if (!rom.readCPUMapper(addr, &mapped_addr))
+         if (!rom.readPPUMapper(addr, &mapped_addr))
             return false;
-         rom.CHR_ROM_data[(mapped_addr & 0x0FFF) * ((mapped_addr & 0x1000) >> 12)] = *data;
+         rom.CHR_ROM_data[mapped_addr] = *data; //(mapped_addr & 0x0FFF) * ((mapped_addr & 0x1000) >> 12)] = *data;
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
          //ppu.vram[(addr - 0x2000) % 2048] = *data;
          // VRAM
@@ -225,12 +225,21 @@ bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
       break;
 
       case OAMADDR: // $2003 OAMADDR
+      log_byte("OAM update Address", ppu.oam_addr);
+      log_byte("Data", (uint16_t) (*data));
       ppu.oam_addr = *data;
       break;
 
       case OAMDATA: // $2004 OAMDATA
+
+      log_byte("OAM update Address", ppu.oam_addr);
+      log_byte("Data", (uint16_t) (*data));
+      ppu_write(ppu.vram_addr, data); // Check
       oam[ppu.oam_addr] = *data;
       ppu.oam_addr++;
+      log_byte("Address", ppu.vram_addr);
+      log_byte("Data", (uint16_t) (*data));
+      log_oam();
       break;
 
       case PPUSCROLL: // $2005 PPUSCROLL
@@ -269,6 +278,9 @@ void ppu_dma(bool odd) {
    } else {
       uint8_t *oam = (uint8_t *) ppu.OAM;
       oam[ppu.dma_addr] = ppu.dma_buffer;
+      log_byte("DMA", (ppu.dma_page << 8) | ppu.dma_addr);
+      log_byte("Data", ppu.dma_buffer);
+      log_oam();
       ppu.dma_addr++;
       if (ppu.dma_addr == 0x00) { // When we wrap around 0xFF bytes have been copied
          ppu.dma = false;
@@ -278,11 +290,47 @@ void ppu_dma(bool odd) {
 }
 
 void ppu_clock() {
-   if (ppu.scanline == -1) {
+   uint8_t background_nt = 0;
+   if (ppu.scanline == -1 && ppu.cycles == 0) {
       CLEAR_VERTICAL_BLANK()
    }
-   ppu.cycles++;
+   if (ppu.scanline == 0 && ppu.cycles == 0)
+      ppu.cycles++; // Skip first cycle
+   /*
+   This is the sort of setup with want if we to implement scrolling
+   https://www.nesdev.org/wiki/PPU_rendering
+   */
+   /*
+   switch ((ppu.cycles - 1) % 8) {
+      case 0:
+      // Fetch NT
+      ppu_read(0x2000 | (ppu.vram_addr & 0x0FFF), &background_nt);
+      break;
 
+      case 2:
+      // Fetch AT
+      /*
+      Used for colors
+      Ignore for now. Too hard
+      */
+   /*
+
+      break;
+
+      case 4:
+      // Fetch BG lsbit
+      break;
+      
+      case 6:
+      // Fetch BG msbit
+      break;
+
+      case 7:
+
+      break;
+   }
+   */
+   ppu.cycles++;
    if (ppu.cycles >= DOTS) {
       ppu.scanline++;
       ppu.cycles = 0;
@@ -295,12 +343,14 @@ void ppu_clock() {
       if (IS_NMI_ENABLED())
          cpu_nmi();
       nametable_to_buffer();
-      oam_to_buffer();
-      nes_screen();
+      //oam_to_buffer();
+      log_namespace();
+      log_oam();
+      log_pixels();
+      //nes_screen();
       SET_VERTICAL_BLANK()
       ppu.framecount++;
    } else if (ppu.scanline >= SCANLINES) {
       ppu.scanline = -1;
-      log_namespace();
    }
 }

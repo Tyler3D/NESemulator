@@ -71,7 +71,6 @@ struct PPU {
     uint8_t ppu_regs[8];
     uint16_t vram_addr;
     uint8_t oam_addr;
-    pixel screen[SCREEN_WIDTH][SCREEN_HEIGHT];
     struct OAM_tile OAM[64];
     uint8_t dma_page;
     uint8_t dma_addr;

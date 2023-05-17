@@ -118,7 +118,6 @@ void compare(uint8_t *first, uint8_t *second ) {
     SET_CARRY_FLAG(*first >= *second)
     SET_ZERO_FLAG(result)
     SET_NEG_FLAG(result)
-    //printf("Comparing %X and %X\n", *first, *second);
 }
 
 void push(uint8_t *byte) {
@@ -175,8 +174,6 @@ void column0x00() {
         push(&low);
         cpu.cycles += 6;
         cpu.pc = (((uint16_t) cpu.high) << 8) | cpu.low;
-        //printf("JSR sorta implemented\n");
-        //cpu.fail();
         break;
 
         case 0x40: // RTI Return from Interrupt
@@ -189,10 +186,8 @@ void column0x00() {
         pull(&hi);
 	    cpu.status &= ~b_flag;
 	    cpu.status |= always_on_flag;
-        // How to pull PC?
+        // Check if PC is pulled/pushed right
         cpu.pc = (((uint16_t) hi) << 8) | low;
-        //printf("RTI sorta implemented\n");
-        //cpu.fail();
         break;
 
         case 0x60: // RTS Return from Subroutine
@@ -204,8 +199,6 @@ void column0x00() {
         cpu.cycles += 6;
         cpu.pc = (((uint16_t) hi) << 8) | low;
         cpu.pc++;
-        //printf("RTS unimplemented\n");
-        //cpu.fail();
         break;
 
         case 0xA0: // LDY #%X
@@ -236,6 +229,7 @@ void column0x00() {
         compare(&cpu.x, &cpu.low);
         sprintf(cpu.asm_args, "#%02X", cpu.low);
         break;
+
         default:
         printf("Broken Instruction 0x%x\n", cpu.opcode);
         cpu.fail();
@@ -267,7 +261,6 @@ void column0x04(uint8_t *byte, uint16_t *addr) {
 
         case 0x84: // STY
         // Store Index Y in Memory
-        // Check
         cpu.instruction = "STY";
         cpu_write(*addr, &cpu.y);
         break;
@@ -404,8 +397,6 @@ void column0x0C(uint8_t *byte, uint16_t *addr) {
         cpu.pc = (((uint16_t) hi) << 8) | low;
         sprintf(cpu.asm_args, "$(%02X%02X)", cpu.high, cpu.low);
         return;
-        //printf("JMP ind not implemented\n");
-        //cpu.fail();
         break;
 
         case 0x8C: // STY
@@ -579,7 +570,6 @@ void column0x18() {
 
 /*ALU Instructions*/
 void ORA(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("ORA %s\n", cpu.instruction);
     cpu.instruction = "ORA";
     cpu.a = cpu.a | *byte;
     SET_ZERO_FLAG(cpu.a)
@@ -587,8 +577,6 @@ void ORA(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void AND(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //log_state(4,)
-    //printf("AND %s\n", cpu.instruction);
     cpu.instruction = "AND";
     cpu.a = cpu.a & *byte;
     SET_ZERO_FLAG(cpu.a)
@@ -596,7 +584,6 @@ void AND(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void EOR(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("EOR %s\n", cpu.instruction);
     cpu.instruction = "EOR";
     cpu.a = cpu.a ^ *byte;
     SET_ZERO_FLAG(cpu.a)
@@ -606,10 +593,8 @@ void EOR(uint8_t *byte, uint16_t *addr, bool immediate) {
 void ADC(uint8_t *byte, uint16_t *addr, bool immediate) {
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
     uint16_t result = (uint16_t) cpu.a + (uint16_t) *byte + carryBit;
-    //printf("ADC %s\n", cpu.instruction);
     cpu.instruction = "ADC";
     SET_CARRY_FLAG((uint16_t) cpu.a + (uint16_t) *byte + (uint16_t) carryBit > 0xFF)
-    //SET_CARRY_FLAG(cpu.a, *byte, carryBit)
     SET_OVERFLOW_FLAG(cpu.a, *byte, carryBit)
     cpu.a = result & 0xFF;
     SET_ZERO_FLAG(cpu.a)
@@ -617,7 +602,6 @@ void ADC(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void LDA(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("LDA %s\n", cpu.instruction);
     cpu.instruction = "LDA";
     cpu.a = *byte;
     SET_ZERO_FLAG(cpu.a)
@@ -625,7 +609,6 @@ void LDA(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void STA(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("STA %s\n", cpu.instruction);
     cpu.instruction = "STA";
     if (!immediate) {// If not STA #i which is NOP
         cpu_write(*addr, &cpu.a);
@@ -633,20 +616,16 @@ void STA(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void CMP(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("CMP %s\n", cpu.instruction);
     cpu.instruction = "CMP";
     compare(&cpu.a, byte);
 }
 
 void SBC(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("SBC %s\n", cpu.instruction);
     cpu.instruction = "SBC";
     uint16_t borrowBit = ((cpu.status & carry) > 0) ? 0 : 1;
     uint16_t result = (uint16_t) cpu.a - *byte - borrowBit;
     printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
     SET_CARRY_FLAG(((uint16_t) cpu.a >= borrowBit + *byte))
-    //SET_CARRY_FLAG((result & 0xFF00) > 0)
-    //SET_CARRY_FLAG(cpu.a, *byte, carryBit)
     SET_OVERFLOW_FLAG(cpu.a, -1 * *byte, -1 * borrowBit)
     printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
     cpu.a = result & 0xFF;
@@ -657,7 +636,6 @@ void SBC(uint8_t *byte, uint16_t *addr, bool immediate) {
 
 /*RMW Instructions*/
 void ASL(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("ASL %s\n", cpu.instruction);
     cpu.instruction = "ASL";
     if (immediate) {
         SET_CARRY_FLAG((cpu.a & 0x80) > 0)
@@ -675,9 +653,7 @@ void ASL(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void LSR(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("LSR %s\n", cpu.instruction);
     cpu.instruction = "LSR";
-    //SET_NEG_FLAG(*byte)
     cpu.status &= ~negative;
     if (immediate) {
         SET_CARRY_FLAG((cpu.a & 0x01) > 0)
@@ -692,7 +668,6 @@ void LSR(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void ROL(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("ROL %s\n", cpu.instruction);
     cpu.instruction = "ROL";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
     if (immediate) {
@@ -711,10 +686,8 @@ void ROL(uint8_t *byte, uint16_t *addr, bool immediate) {
 }
 
 void ROR(uint8_t *byte, uint16_t *addr, bool immediate) {
-    //printf("ROR %s\n", cpu.instruction);
     cpu.instruction = "ROR";
     uint16_t carryBit = ((cpu.status & carry) > 0) ? 1 : 0;
-    //SET_CARRY_FLAG(*byte, 0, 0)
     if (immediate) {
         SET_CARRY_FLAG(cpu.a & 0x01)
         cpu.a = (cpu.a >> 1) | (carryBit << 7);
@@ -732,7 +705,6 @@ void ROR(uint8_t *byte, uint16_t *addr, bool immediate) {
 
 void STX(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
-        //printf("TXA\n");
         cpu.instruction = "TXA";
         cpu.a = cpu.x;
         cpu.asm_argc = 1;
@@ -740,7 +712,6 @@ void STX(uint8_t *byte, uint16_t *addr, bool immediate) {
         SET_NEG_FLAG(cpu.a)
     } else {
         cpu.instruction = "STX";
-        //printf("STX %s\n", cpu.instruction);
         cpu_write(*addr, &cpu.x);
     }
 }
@@ -748,12 +719,10 @@ void STX(uint8_t *byte, uint16_t *addr, bool immediate) {
 void LDX(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
         cpu.instruction = "TAX";
-        //printf("TAX\n");
         cpu.asm_argc = 1;
         cpu.x = cpu.a;
     } else {
         cpu.instruction = "LDX";
-        //printf("LDX %s\n", cpu.instruction);
         cpu.x = *byte;
     }
     SET_ZERO_FLAG(cpu.x)
@@ -764,10 +733,8 @@ void INC(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
         cpu.instruction = "NOP";
         cpu.asm_argc = 1;
-        //printf("NOP impl\n");
     } else {
         cpu.instruction = "INC";
-        //printf("INC %s\n", cpu.instruction);
         (*byte)++;
         SET_ZERO_FLAG(*byte)
         SET_NEG_FLAG(*byte)
@@ -779,14 +746,12 @@ void DEC(uint8_t *byte, uint16_t *addr, bool immediate) {
     if (immediate) {
         cpu.instruction = "DEX";
         cpu.asm_argc = 1;
-        //printf("DEX\n");
         cpu.x--;
         SET_ZERO_FLAG(cpu.x)
         SET_NEG_FLAG(cpu.x)
         return;
     }
     cpu.instruction = "DEC";
-    //printf("DEC %s\n", cpu.instruction);
     (*byte)--;
     cpu_write(*addr, byte);
     SET_ZERO_FLAG(*byte)
@@ -830,8 +795,6 @@ void handleControl() {
             sprintf(cpu.asm_args, "$%02X,x", cpu.low);
             cpu.cycles += 4;
             cpu_write(addr, &cpu.y);
-            //printf("STY not implemented\n");
-            //cpu.fail();
         } else if (cpu.opcode == 0xB4) {
             // LDY
             cpu.cycles += 4;
@@ -897,7 +860,6 @@ void handleALU() {
 
     switch(cpu.opcode % 0x20) {
         case 0x01: // (indirect, X)
-        //cpu.pc++;
         READ_BYTE_FROM_ADDR(cpu.pc, cpu.low)
         sprintf(cpu.asm_args, "($%02X,x)", cpu.low);
         cpu.low += cpu.x;
@@ -936,7 +898,6 @@ void handleALU() {
         break;
 
         case 0x11: // (indirect), Y
-        //cpu.pc++;
         READ_BYTE_FROM_ADDR(cpu.pc, cpu.low)
         sprintf(cpu.asm_args, "($%02X),y", cpu.low);
         SET_ADDR(addr, 0)
@@ -1072,14 +1033,12 @@ void handleRMW() {
         // Only TXS and TSX
         if (cpu.opcode == 0x9A) { 
             // TXS
-            //printf("TXS\n");
             cpu.instruction = "TXS";
             cpu.sp = cpu.x;
             cpu.cycles += 2;
             
         } else if (cpu.opcode == 0xBA) {
             // TSX
-            //printf("TSX\n");
             cpu.instruction = "TSX";
             cpu.x = cpu.sp;
             cpu.cycles += 2;

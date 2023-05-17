@@ -14,5 +14,7 @@ void log_page(uint16_t);
 void log_namespace();
 void log_byte(char *buf, uint16_t byte);
 void log_second_namespace();
+void log_pixels();
+void log_oam();
 
 #endif

@@ -36,10 +36,10 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (!fbopen()) {
-        printf("Frame buffer isn't open\n");
-        return 0;
-    }
+    //if (!fbopen()) {
+    //    printf("Frame buffer isn't open\n");
+    //    return 0;
+    //}
 
     fp = fopen(argv[1], "rb");
     if (!fp) {
@@ -157,6 +157,7 @@ int main(int argc, char **argv) {
                     ppu_dma((clocks % 2 == 1) ? 1 : 0);
                 }
                 deltaCycles = 1;
+                cpu.cycles++;
             }
         }
         for (int i = 0; i < deltaCycles * 3; i++) {

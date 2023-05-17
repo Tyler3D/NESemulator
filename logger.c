@@ -97,19 +97,56 @@ void log_second_namespace() {
     fwrite(buf, sizeof(char), strlen(buf), logfp);
 }
 
-/*
-void log_namespace() {
+
+void log_oam() {
+    return;
     char buf[4096] = {0};
-    for (uint8_t y = 0; y < 30; y++) {
-        for (uint8_t x = 0; x < 32; x++) {
-            sprintf(buf + strlen(buf), "%-2x ", ppu.oam[(y * 32) + x]);
+    uint8_t *oam = (uint8_t *) ppu.OAM;
+    for (uint8_t y = 0; y < 16; y++) {
+        for (uint8_t x = 0; x < 16; x++) {
+            sprintf(buf + strlen(buf), "%-2x ", oam[(y * 32) + x]);
         }
         sprintf(buf + strlen(buf), "\n");
     }
-    fwrite("Printing namespace\n", sizeof(char), strlen("Printing namespace\n"), logfp);
+    fwrite("Printing OAM\n", sizeof(char), strlen("Printing OAM\n"), logfp);
+    fwrite(buf, sizeof(char), strlen(buf), logfp);
+}
+
+/*
+void log_OAM() {
+    char buf[4096] = {0};
+    uint8_t *oam = (uint8_t *) ppu.OAM;
+    for (uint8_t y = 0; y < 16; y++) {
+        for (uint8_t x = 0; x < 16; x++) {
+            sprintf(buf + strlen(buf), "%-2x ", oam[(y * 32) + x]);
+        }
+        sprintf(buf + strlen(buf), "\n");
+    }
+    fwrite("Printing OAM\n", sizeof(char), strlen("Printing OAM\n"), logfp);
     fwrite(buf, sizeof(char), strlen(buf), logfp);
 }
 */
+
+
+void log_pixels() {
+    return;
+    char buf[4096000] = {0};
+    for (int y = 0; y < SCREEN_HEIGHT; y ++)
+    {
+        for (int x = 0; x < SCREEN_WIDTH; x ++)
+        {
+        // 81, 245, 125
+        //sprintf(buf + strlen(buf), "(%-2x %-2x %-2x)", buffer[y * SCREEN_WIDTH + x].r, buffer[y * SCREEN_WIDTH + x].b, buffer[y * SCREEN_WIDTH + x].g);
+        sprintf(buf + strlen(buf), "%-2x", buffer[y * SCREEN_WIDTH + x].r);
+        //setPixel(x, y, 81, 245, 125, 0);
+        //setPixel(x, y, buffer[y * SCREEN_WIDTH + x].r, buffer[y * SCREEN_WIDTH + x].b, buffer[y * SCREEN_WIDTH + x].g, 0);
+        // setPixel(x, y, screen[y][x].r, screen[y][x].b, screen[y][x].g, 0);
+        }
+        sprintf(buf + strlen(buf), "\n");
+    }
+    fwrite("Printing pixels\n", sizeof(char), strlen("Printing pixels\n"), logfp);
+    fwrite(buf, sizeof(char), strlen(buf), logfp);
+}
 
 void log_byte(char *buf, uint16_t byte) {
     return;
