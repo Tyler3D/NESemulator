@@ -101,6 +101,10 @@ void log_second_namespace() {
 void log_oam() {
     return;
     char buf[4096] = {0};
+    for (uint8_t i = 0; i < 64; i++) {
+        sprintf(buf + strlen(buf), "%d: (%d %d) ID: %x, AT: %x\n", i, ppu.OAM[i].x, ppu.OAM[i].y, ppu.OAM[i].id, ppu.OAM[i].attributes);
+    }
+    /*
     uint8_t *oam = (uint8_t *) ppu.OAM;
     for (uint8_t y = 0; y < 16; y++) {
         for (uint8_t x = 0; x < 16; x++) {
@@ -108,6 +112,7 @@ void log_oam() {
         }
         sprintf(buf + strlen(buf), "\n");
     }
+    */
     fwrite("Printing OAM\n", sizeof(char), strlen("Printing OAM\n"), logfp);
     fwrite(buf, sizeof(char), strlen(buf), logfp);
 }

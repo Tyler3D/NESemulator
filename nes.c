@@ -153,6 +153,7 @@ int main(int argc, char **argv) {
                 // Start dma on even clock cycle
                     //printf("DMA START\n");
                     ppu.dma_starting = true;
+                    //log_page(2);
                 } else if (ppu.dma_starting) {
                     ppu_dma((clocks % 2 == 1) ? 1 : 0);
                 }

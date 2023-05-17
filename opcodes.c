@@ -624,10 +624,10 @@ void SBC(uint8_t *byte, uint16_t *addr, bool immediate) {
     cpu.instruction = "SBC";
     uint16_t borrowBit = ((cpu.status & carry) > 0) ? 0 : 1;
     uint16_t result = (uint16_t) cpu.a - *byte - borrowBit;
-    printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
+    //printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
     SET_CARRY_FLAG(((uint16_t) cpu.a >= borrowBit + *byte))
     SET_OVERFLOW_FLAG(cpu.a, -1 * *byte, -1 * borrowBit)
-    printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
+    //printf("CPU.A: %X, BYTE: %X, RESULT: %X, STATUS: %X\n", cpu.a, *byte, result, cpu.status);
     cpu.a = result & 0xFF;
     SET_ZERO_FLAG(cpu.a)
     SET_NEG_FLAG(cpu.a)

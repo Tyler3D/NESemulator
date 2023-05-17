@@ -31,7 +31,7 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
         //*data = cpu.ppu_regs[(addr - 0x2000) % 8];
     } else if (addr >= 0x4000 && addr <= 0x4017) {
         if (addr == 0x4016) {
-            *data = readController(&player1);
+            *data = 0; //readController(&player1);
             printf("READING CONTROLLER 1: %X byte %X for button %X\n", player1.buttons, *data, player1.bitCounter);
             fwrite("Reading controller\n", sizeof(char), strlen("Reading controller\n"), logfp);
         }

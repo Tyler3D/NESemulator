@@ -272,15 +272,17 @@ bool cpu_ppu_write(uint16_t addr, uint8_t *data) {
 }
 
 void ppu_dma(bool odd) {
-   if (odd) {
+   if (!odd) {
       uint16_t addr = ((uint16_t) ppu.dma_page) << 8 | ppu.dma_addr;
       cpu_read(addr, &ppu.dma_buffer);
+      //log_byte("DMA", (ppu.dma_page << 8) | ppu.dma_addr);
+      //log_byte("Data", ppu.dma_buffer);
    } else {
       uint8_t *oam = (uint8_t *) ppu.OAM;
       oam[ppu.dma_addr] = ppu.dma_buffer;
-      log_byte("DMA", (ppu.dma_page << 8) | ppu.dma_addr);
-      log_byte("Data", ppu.dma_buffer);
-      log_oam();
+      //log_byte("DMA", (ppu.dma_page << 8) | ppu.dma_addr);
+      //log_byte("Data", ppu.dma_buffer);
+      //log_oam();
       ppu.dma_addr++;
       if (ppu.dma_addr == 0x00) { // When we wrap around 0xFF bytes have been copied
          ppu.dma = false;
@@ -343,11 +345,11 @@ void ppu_clock() {
       if (IS_NMI_ENABLED())
          cpu_nmi();
       nametable_to_buffer();
-      //oam_to_buffer();
+      oam_to_buffer();
       log_namespace();
       log_oam();
       log_pixels();
-      //nes_screen();
+      nes_screen();
       SET_VERTICAL_BLANK()
       ppu.framecount++;
    } else if (ppu.scanline >= SCANLINES) {

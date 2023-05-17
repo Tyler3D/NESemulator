@@ -1,5 +1,6 @@
 #include "controller.h"
 #include "cpu.h"
+#include "ppu.h"
 
 struct controller player1 = {
     .buttons = 0,
@@ -35,7 +36,12 @@ void poll_controllers(uint8_t *data) {
     //if (player1.buttons > 0) {
     //    CLEAR_CONTROLLER(player1.buttons);
     //} else {
-    //SET_START_BUTTON(player1.buttons);
+    //if (ppu.framecount < 30) {
+    //    SET_START_BUTTON(player1.buttons);
+    //} else {
+    //    CLEAR_START_BUTTON(player1.buttons);
+    //    SET_RIGHT_BUTTON(player1.buttons);
+    //}
         //SET_A_BUTTON(player1.buttons);
     //}
     //printf("Polling controllers %X\n", player1.buttons);
