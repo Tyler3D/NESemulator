@@ -141,6 +141,7 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 		uint8_t value;
 		uint8_t left;
 		uint8_t right;
+		pixel rgb;
 
 		ppu_read(i, &left);
 		ppu_read(i + 8, &right);
@@ -158,8 +159,12 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 			// Note palette is set to 0 for temporary purposes
 			//if (value > 0) {
 			//printf("Attempting to convert RGB\n");
-			if (sprite) pixel rgb = convert_rgb_tile(value, palette + 4, prio);
-			else pixel rgb = convert_rgb_background(value, palette, prio);
+			if (sprite) {
+				rgb = convert_rgb_tile(value, palette + 4, prio);
+			}
+			else {
+				rgb = convert_rgb_background(value, palette, prio);
+			}
 			//printf("convert RGB\n");
 			pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
 			//}
