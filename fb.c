@@ -99,9 +99,9 @@ void setPixel(uint32_t x, uint32_t y, uint32_t r,
 void nes_screen()
 {
   uint32_t x, y;
-  for (y = 0; y < NES_SCRN_H * SCREEN_SCALER; y += SCREEN_SCALER)
+  for (y = 0; y < SCREEN_HEIGHT * SCREEN_SCALER; y += SCREEN_SCALER)
   {
-    for (x = 0; x < NES_SCRN_W * SCREEN_SCALER; x += SCREEN_SCALER)
+    for (x = 0; x < SCREEN_WIDTH * SCREEN_SCALER; x += SCREEN_SCALER)
     {
       // 81, 245, 125
 
