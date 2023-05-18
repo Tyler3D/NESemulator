@@ -23,15 +23,19 @@ pixel convert_rgb_tile(uint8_t value, uint8_t pallete, uint8_t prio) {
 	uint8_t index;
 	//printf("Trying to read pallette %x from address %x\n", pallete, 0x3F00 + (pallete * 4) + value);
 	ppu_read(0x3F00 + (pallete * 4) + value, &index);
+	if (value)
 	//printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
-	pix.r = rgb.r;
-	pix.g = rgb.g;
-	pix.b = rgb.b;
-	// pix.r = value * 255 / 3;
-	// pix.g = value * 255 / 3;
-	// pix.b = value * 255 / 3;
+	if (value == 0){
+		pix.r = system
+	}
+	// pix.r = rgb.r;
+	// pix.g = rgb.g;
+	// pix.b = rgb.b;
+	pix.r = value * 255 / 3;
+	pix.g = value * 255 / 3;
+	pix.b = value * 255 / 3;
 	pix.prio = prio;
 	return pix;
 }
@@ -43,12 +47,12 @@ pixel convert_rgb_background(uint8_t value, uint8_t pallete, uint8_t prio) {
 	//printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
-	// pix.r = rgb.r;
-	// pix.g = rgb.g;
-	// pix.b = rgb.b;
-	pix.r = value * 255 / 3;
-	pix.g = value * 255 / 3;
-	pix.b = value * 255 / 3;
+	pix.r = rgb.r;
+	pix.g = rgb.g;
+	pix.b = rgb.b;
+	// pix.r = value * 255 / 3;
+	// pix.g = value * 255 / 3;
+	// pix.b = value * 255 / 3;
 	pix.prio = prio;
 	return pix;
 }
@@ -234,11 +238,11 @@ void nametable_to_buffer() {
 		if (x_mod == 0 && y_mod == 0) // Use upper left of AT
 			pallete_to_use = (at & (0b11));
 		else if (x_mod == 1 && y_mod == 0) // Use upper right of AT
-			pallete_to_use = (at & (0b11 << 2));
+			pallete_to_use = (at >> 2 & (0b11));
 		else if (x_mod == 0 && y_mod == 1) // Use lower left of AT
-			pallete_to_use = (at & (0b11 << 4));
+			pallete_to_use = (at >> 4 & (0b11 << 4));
 		else if (x_mod == 1 && y_mod == 1) // Use lower left of AT
-			pallete_to_use = (at & (0b11 << 6));
+			pallete_to_use = (at >> 6 & (0b11 << 6));
 		else
 			exit(1);
 		//log_byte_at("Pallete to use", pallete_to_use);
