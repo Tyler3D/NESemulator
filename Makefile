@@ -20,4 +20,4 @@ clean :
 	rm -rf *.o nes_emu *.txt
 	
 run: clean nes
-	./nes_emu ./nestest.nes
+	./nes_emu ./dk.nes
