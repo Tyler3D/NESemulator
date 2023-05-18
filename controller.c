@@ -44,11 +44,13 @@ void poll_controllers(uint8_t *data) {
     //}
     // if (ppu.framecount < 300){
     //     SET_A_BUTTON(player1.buttons);
+    //     SET_RIGHT_BUTTON(player1.buttons);
     // }
     // else{
     //     CLEAR_A_BUTTON(player1.buttons);
     // }
         // SET_A_BUTTON(player1.buttons);
+        // 
     //}
     //printf("Polling controllers %X\n", player1.buttons);
     player1.isPolling = true;
