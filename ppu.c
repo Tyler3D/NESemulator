@@ -345,6 +345,11 @@ void ppu_clock() {
       */
       if (IS_NMI_ENABLED())
          cpu_nmi();
+         
+      if ((ppu.cycles % 2) == 1)
+         memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH);
+      else
+         memset(screen, 0, SCREEN_HEIGHT * SCREEN_WIDTH);
       nametable_to_buffer();
       oam_to_buffer();
       log_namespace();
