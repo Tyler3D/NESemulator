@@ -85,8 +85,8 @@ void setPixel(uint32_t x, uint32_t y, uint32_t r,
   {
     for (k = 0; k < SCREEN_SCALER; k++)
     {
-      uint32_t location = (((fb_vinfo.xres / 2 - (NES_SCRN_W * SCREEN_SCALER) / 2) + (x + k)) * fb_vinfo.bits_per_pixel / 8) +
-                          (((fb_vinfo.yres / 2 - (NES_SCRN_H * SCREEN_SCALER) / 2) + (y + j)) * fb_finfo.line_length);
+      uint32_t location = (((fb_vinfo.xres / 2 - (SCREEN_WIDTH * SCREEN_SCALER) / 2) + (x + k)) * fb_vinfo.bits_per_pixel / 8) +
+                          (((fb_vinfo.yres / 2 - (SCREEN_HEIGHT * SCREEN_SCALER) / 2) + (y + j)) * fb_finfo.line_length);
       *((uint32_t *)(framebuffer + location)) = pixel;
     }
   }
@@ -102,9 +102,9 @@ void nes_screen()
   //printf("Framebuffer %d", fbopen());
   //printf("Framebuffer %d", fb_vinfo.yres);
   uint32_t x, y;
-  for (y = 0; y < NES_SCRN_H * SCREEN_SCALER; y += SCREEN_SCALER)
+  for (y = 0; y < SCREEN_HEIGHT * SCREEN_SCALER; y += SCREEN_SCALER)
   {
-    for (x = 0; x < NES_SCRN_W * SCREEN_SCALER; x += SCREEN_SCALER)
+    for (x = 0; x < SCREEN_WIDTH * SCREEN_SCALER; x += SCREEN_SCALER)
     {
       // 81, 245, 125
 
