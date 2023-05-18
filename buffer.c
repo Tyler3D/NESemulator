@@ -86,9 +86,9 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 void sprite_to_buffer(uint8_t y, uint8_t id, uint8_t sprite, uint8_t x) {
 	uint32_t addr;
 	if (sprite & 1) {
-		sprite_addr = 0x1000 + ((id >> 1) * 16);
+		addr = 0x1000 + ((id >> 1) * 16);
 	}
-	else sprite_addr = (addr >> 1) * 16; 
+	else addr = (id >> 1) * 16; 
 	printf("Addr: %x\n", addr);
 	uint8_t rotation = id >> 6;
 	uint8_t priority;
