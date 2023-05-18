@@ -21,7 +21,7 @@ pixel system_pallete[64] = {
 // Implement later; for now just send b/w
 pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t pallete, uint8_t prio) {
 	uint8_t index;
-	ppu_read(0x3F00 + (pallete * 4) + value, index);
+	ppu_read(0x3F00 + (pallete * 4) + value, &index);
 	pixel rgb = system_pallete[index];
 	rgb.prio = prio;
 	return rgb;
