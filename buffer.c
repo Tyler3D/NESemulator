@@ -19,7 +19,7 @@ color system_pallete[64] = {
 
 
 // Implement later; for now just send b/w
-pixel convert_rgb(uint8_t value, uint8_t pallete, uint8_t prio) {
+pixel convert_rgb_tile(uint8_t value, uint8_t pallete, uint8_t prio) {
 	uint8_t index;
 	//printf("Trying to read pallette %x from address %x\n", pallete, 0x3F00 + (pallete * 4) + value);
 	ppu_read(0x3F00 + (pallete * 4) + value, &index);
@@ -32,6 +32,23 @@ pixel convert_rgb(uint8_t value, uint8_t pallete, uint8_t prio) {
 	// pix.r = value * 255 / 3;
 	// pix.g = value * 255 / 3;
 	// pix.b = value * 255 / 3;
+	pix.prio = prio;
+	return pix;
+}
+
+pixel convert_rgb_background(uint8_t value, uint8_t pallete, uint8_t prio) {
+	uint8_t index;
+	//printf("Trying to read pallette %x from address %x\n", pallete, 0x3F00 + (pallete * 4) + value);
+	ppu_read(0x3F00 + (pallete * 4) + value, &index);
+	//printf("At index pallette %x\n", index);
+	color rgb = system_pallete[index];
+	pixel pix;
+	// pix.r = rgb.r;
+	// pix.g = rgb.g;
+	// pix.b = rgb.b;
+	pix.r = value * 255 / 3;
+	pix.g = value * 255 / 3;
+	pix.b = value * 255 / 3;
 	pix.prio = prio;
 	return pix;
 }
@@ -140,7 +157,8 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 			// Note palette is set to 0 for temporary purposes
 			//if (value > 0) {
 			//printf("Attempting to convert RGB\n");
-			pixel rgb = convert_rgb(value, (sprite == 0) ? palette : (palette + 4), prio);
+			if (sprite) pixel rgb = convert_rgb_tile(value, palette + 4, prio);
+			else pixel rgb = convert_rgb_background(value, palette, prio);
 			//printf("convert RGB\n");
 			pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
 			//}
