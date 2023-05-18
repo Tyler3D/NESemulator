@@ -30,14 +30,14 @@ pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t pallete, uint8_t prio) {
 void pixel_to_buffer(pixel *pixel, uint16_t x, uint16_t y) {
 	if (x > 255 || y > 240)
 		return;
-	if ((ppu.framecount % 2) == 1) {
-		if (buffer[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
-			buffer[y * SCREEN_WIDTH + x] = *pixel;
-		}
-	} else {
-		if (screen[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
-			screen[y * SCREEN_WIDTH + x] = *pixel;
-		}
+	//if ((ppu.framecount % 2) == 1) {
+		//if (buffer[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
+	buffer[y * SCREEN_WIDTH + x] = *pixel;
+		//}
+	//} else {
+	//	if (screen[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
+	//		screen[y * SCREEN_WIDTH + x] = *pixel;
+	//	}
 	}
 }
 
