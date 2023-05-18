@@ -27,9 +27,6 @@ pixel convert_rgb_tile(uint8_t value, uint8_t pallete, uint8_t prio) {
 	//printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
-	if (value == 0){
-		pix.r = system
-	}
 	// pix.r = rgb.r;
 	// pix.g = rgb.g;
 	// pix.b = rgb.b;
