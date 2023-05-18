@@ -1,7 +1,7 @@
 #include "ppu.h"
 #include "logger.h"
 
-pixel system_pallete[64] = {
+color system_pallete[64] = {
    {0x80, 0x80, 0x80}, {0x00, 0x3D, 0xA6}, {0x00, 0x12, 0xB0}, {0x44, 0x00, 0x96}, {0xA1, 0x00, 0x5E},
    {0xC7, 0x00, 0x28}, {0xBA, 0x06, 0x00}, {0x8C, 0x17, 0x00}, {0x5C, 0x2F, 0x00}, {0x10, 0x45, 0x00},
    {0x05, 0x4A, 0x00}, {0x00, 0x47, 0x2E}, {0x00, 0x41, 0x66}, {0x00, 0x00, 0x00}, {0x05, 0x05, 0x05},
@@ -19,25 +19,32 @@ pixel system_pallete[64] = {
 
 
 // Implement later; for now just send b/w
-pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t pallete, uint8_t prio) {
+pixel convert_rgb(uint8_t value, uint8_t pallete, uint8_t prio) {
 	uint8_t index;
+	//printf("Trying to read pallette %x from address %x\n", pallete, 0x3F00 + (pallete * 4) + value);
 	ppu_read(0x3F00 + (pallete * 4) + value, &index);
-	pixel rgb = system_pallete[index];
-	rgb.prio = prio;
-	return rgb;
+	//printf("At index pallette %x\n", index);
+	color rgb = system_pallete[index];
+	pixel pix;
+	pix.r = rgb.r;
+	pix.g = rgb.g;
+	pix.b = rgb.b;
+	pix.prio = prio;
+	return pix;
 }
 
 void pixel_to_buffer(pixel *pixel, uint16_t x, uint16_t y) {
 	if (x > 255 || y > 240)
 		return;
-	//if ((ppu.framecount % 2) == 1) {
-		//if (buffer[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
-	buffer[y * SCREEN_WIDTH + x] = *pixel;
-		//}
-	//} else {
-	//	if (screen[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
-	//		screen[y * SCREEN_WIDTH + x] = *pixel;
-	//	}
+	if ((ppu.framecount % 2) == 1) {
+		if (buffer[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
+			buffer[y * SCREEN_WIDTH + x] = *pixel;
+		}
+	} else {
+		if (screen[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
+			screen[y * SCREEN_WIDTH + x] = *pixel;
+		}
+	}
 }
 
 /*
@@ -123,7 +130,9 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 				value = 0;
 			// Note palette is set to 0 for temporary purposes
 			//if (value > 0) {
-			pixel rgb = convert_rgb(0, value, (sprite == 0) ? palette : (palette + 4), prio);
+			//printf("Attempting to convert RGB\n");
+			pixel rgb = convert_rgb(value, (sprite == 0) ? palette : (palette + 4), prio);
+			//printf("convert RGB\n");
 			pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
 			//}
 			if (rotation) x_offset--;
@@ -182,13 +191,16 @@ void nametable_to_buffer() {
 	uint8_t byte;
 	// Note: addr calculation is nametable_base + background_base + nametable_byte;
 	uint16_t nt;
-	uint16_t at;
+	uint8_t at;
 	uint8_t pallete_to_use;
 	for (int i = 0; i < 960; i++) { // Need to change for scroll
 		ppu_read(0x2000 + i, &byte);
 		// Calculate addr later!
 		nt = byte << 4;
+		//printf("Reading from address %x\n", 0x23C0 | (i & 0x0C00));
+		//fflush(logfp);
 		ppu_read(0x23C0 | (i & 0x0C00), &at);
+		//printf("Reading from at %x %x\n", byte, at);
 		// Pallete_to_use contains the 2 bits 
 		if ((x & 0x00) && (y & 0x00)) // Use upper left of AT
 			pallete_to_use = (at & (0x03));
@@ -198,6 +210,7 @@ void nametable_to_buffer() {
 			pallete_to_use = (at & (0x30)) >> 4;
 		else if ((x & 0x01) && (y & 0x01)) // Use lower left of AT
 			pallete_to_use = (at & (0xc0)) >> 6;
+		//printf("Pallete to use %x\n", pallete_to_use);
 
 
 		// Addr, palette, prio, x, y, rotation
