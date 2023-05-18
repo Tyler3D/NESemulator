@@ -361,7 +361,7 @@ void ppu_clock() {
       //else
       //   memset(screen, 0, SCREEN_HEIGHT * SCREEN_WIDTH);
       nametable_to_buffer();
-      // oam_to_buffer();
+      oam_to_buffer();
       log_namespace();
       //log_oam();
       log_pixels();
