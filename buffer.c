@@ -4,9 +4,9 @@
 // Implement later; for now just send b/w
 pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t prio) {
 	pixel rgb;
-	rgb.r = value; // * 255 / 3;
-	rgb.g = value; // * 255 / 3;
-	rgb.b = value; // * 255 / 3;
+	rgb.r = value * 255 / 3;
+	rgb.g = value * 255 / 3;
+	rgb.b = value * 255 / 3;
 	rgb.prio = prio;
 	return rgb;
 }
