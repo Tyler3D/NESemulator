@@ -26,12 +26,12 @@ pixel convert_rgb(uint8_t value, uint8_t pallete, uint8_t prio) {
 	//printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
-	// pix.r = rgb.r;
-	// pix.g = rgb.g;
-	// pix.b = rgb.b;
-	pix.r = value * 255 / 3;
-	pix.g = value * 255 / 3;
-	pix.b = value * 255 / 3;
+	pix.r = rgb.r;
+	pix.g = rgb.g;
+	pix.b = rgb.b;
+	// pix.r = value * 255 / 3;
+	// pix.g = value * 255 / 3;
+	// pix.b = value * 255 / 3;
 	pix.prio = prio;
 	return pix;
 }
@@ -47,7 +47,7 @@ void pixel_to_buffer(pixel *pixel, uint16_t x, uint16_t y) {
 	//	if (screen[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
 			//screen[y * SCREEN_WIDTH + x] = *pixel;
 	//	}
-	//}
+	//}tile_row / 4 * 8 +  tile_column / 4;
 }
 
 /*
