@@ -211,7 +211,7 @@ void nametable_to_buffer() {
 		//printf("Reading from address %x\n", 0x23C0 | (i & 0x0C00));
 		//fflush(logfp);
 		ppu_read(0x23C0 + (y / 4 * 8) + x, &at);
-		// printf("Reading from at %x %x\n", byte, at);
+		printf("Reading from at %x %x\n", byte, at);
 		// Pallete_to_use contains the 2 bits 
 		if (x_mod == 0 && y_mod == 0) // Use upper left of AT
 			pallete_to_use = (at & (0b11));
