@@ -23,7 +23,7 @@ pixel convert_rgb_tile(uint8_t value, uint8_t pallete, uint8_t prio) {
 	uint8_t index;
 	//printf("Trying to read pallette %x from address %x\n", pallete, 0x3F00 + (pallete * 4) + value);
 	ppu_read(0x3F00 + (pallete * 4) + value, &index);
-	if (value)
+	// if (value)
 	//printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
