@@ -42,10 +42,10 @@ void poll_controllers(uint8_t *data) {
     //    CLEAR_START_BUTTON(player1.buttons);
     //    SET_RIGHT_BUTTON(player1.buttons);
     //}
-    // if (ppu.framecount < 300){
-    //     SET_A_BUTTON(player1.buttons);
-    //     SET_RIGHT_BUTTON(player1.buttons);
-    // }
+    if (ppu.framecount < 300){
+        SET_A_BUTTON(player1.buttons);
+        SET_RIGHT_BUTTON(player1.buttons);
+    }
     // else{
     //     CLEAR_A_BUTTON(player1.buttons);
     // }
