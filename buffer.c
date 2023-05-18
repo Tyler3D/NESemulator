@@ -3,15 +3,15 @@
 // Implement later; for now just send b/w
 pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t prio) {
 	pixel rgb;
-	rgb.r = value; // * 255 / 3;
-	rgb.g = value; // * 255 / 3;
-	rgb.b = value; // * 255 / 3;
+	rgb.r = (value * 255) / 3;
+	rgb.g = (value * 255) / 3;
+	rgb.b = (value * 255) / 3;
 	rgb.prio = prio;
 	return rgb;
 }
 
 void pixel_to_buffer(pixel pixel, uint16_t x, uint16_t y) {
-	printf("X: %d, Y: %d, Pixel: %d", pixel.r);
+	// printf("X: %d, Y: %d, Pixel: %d", pixel.r);
 	if (buffer[y * SCREEN_WIDTH + x].prio <= pixel.prio){
 		buffer[y * SCREEN_WIDTH + x] = pixel;
 	}
@@ -89,7 +89,7 @@ void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x) {
 		sprite_addr = 0x1000 + ((addr >> 1) * 16);
 	}
 	else sprite_addr = (addr >> 1) * 16; 
-
+	printf("Addr: %x\n", sprite_addr);
 	uint8_t rotation = id >> 6;
 	uint8_t priority;
 	if ((id << 5) & 1) {
@@ -114,7 +114,7 @@ void oam_to_buffer() {
 		id = oam[i + 1];
 		attributes = oam[i + 2];
 		x = oam[i + 3];
-		if (y && id && attributes && x) {
+		 if (id || attributes) {
 			sprite_to_buffer(y, id, attributes, x);
 		}
 	}
