@@ -240,11 +240,11 @@ void nametable_to_buffer() {
 		if (x_mod == 0 && y_mod == 0) // Use upper left of AT
 			pallete_to_use = (at & (0b11));
 		else if (x_mod == 1 && y_mod == 0) // Use upper right of AT
-			pallete_to_use = (at >> 2 & (0b11));
+			pallete_to_use = ((at >> 2) & 0b11);
 		else if (x_mod == 0 && y_mod == 1) // Use lower left of AT
-			pallete_to_use = (at >> 4 & (0b11));
+			pallete_to_use = ((at >> 4) & 0b11);
 		else if (x_mod == 1 && y_mod == 1) // Use lower left of AT
-			pallete_to_use = (at >> 6 & (0b11));
+			pallete_to_use = ((at >> 6) & 0b11);
 		else
 			exit(1);
 		//log_byte_at("Pallete to use", pallete_to_use);
