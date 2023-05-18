@@ -2,7 +2,7 @@ CFLAGS = -Wall -g -std=c11
 
 OBJECTS = nes.o rom.o cpu.o opcodes.o logger.o ppu.o controller.o buffer.o fb.o
 
-nes : $(OBJECTS)
+nes : clean $(OBJECTS)
 	cc $(CFLAGS) -o nes_emu $(OBJECTS)
 
 nes.o : nes.c rom.h cpu.h fb.h
@@ -19,5 +19,11 @@ fb.o: fb.c ppu.h fb.h
 clean :
 	rm -rf *.o nes_emu *.txt
 	
-run: clean nes
+dk: nes
 	./nes_emu ./dk.nes
+
+test: nes
+	./nes_emu ./nes_test.nes
+
+pac: nes
+	./nes_emu ./pac.nes
