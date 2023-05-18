@@ -353,7 +353,7 @@ void ppu_clock() {
       nametable_to_buffer();
       oam_to_buffer();
       log_namespace();
-      log_oam();
+      //log_oam();
       log_pixels();
       nes_screen();
       SET_VERTICAL_BLANK()
