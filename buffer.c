@@ -97,7 +97,7 @@ void sprite_to_buffer(uint8_t y, uint8_t id, uint8_t attributes, uint8_t x) {
 void oam_to_buffer() {
 	log_oam();
 	fflush(logfp);
-	for (int i = 0; i < 64; i++) {
+	for (int i = 63; i >= 0; i--) {
 		sprite_to_buffer(ppu.OAM[i].y, ppu.OAM[i].id, ppu.OAM[i].attributes, ppu.OAM[i].x);
 	}
 }
