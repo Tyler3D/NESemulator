@@ -29,8 +29,10 @@ void pixel_to_buffer(pixel *pixel, uint16_t x, uint16_t y) {
 // Palette not implemented
 // Rotation not yet implemented
 void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, uint16_t y, uint8_t rotation) {
-	uint8_t x_offset = 0;
+	uint8_t x_offset;
 	uint8_t y_offset = 0;
+	if (rotation) x_offset = 7;
+	else x_offset = 1;
 	for (int i = addr; i < addr + 8; i++) {
 		uint8_t value;
 		uint8_t left;
@@ -54,11 +56,13 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 				pixel rgb = convert_rgb(0, value, prio);
 				pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
 			//}
-			x_offset++;
+			if (rotation) x_offset--;
+			else x_offset++;
 		}
 		// Note palette is set to 0 for temporary purposes
 		// Implement rotation here
-		x_offset = 0;
+		if (rotation) x_offset = 7;
+		else x_offset = 0;
 		y_offset++;
 	}
 }
