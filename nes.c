@@ -36,10 +36,10 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    //if (!fbopen()) {
-    //    printf("Frame buffer isn't open\n");
-    //    return 0;
-    //}
+    if (!fbopen()) {
+       printf("Frame buffer isn't open\n");
+       return 0;
+    }
 
     fp = fopen(argv[1], "rb");
     if (!fp) {
