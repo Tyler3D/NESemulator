@@ -39,7 +39,7 @@ void print_key()
 
   if (ioctl(vga_ball_fd, READ_BOARD_KEY, &vla))
   {
-    perror("ioctl(VGA_BALL_READ_BACKGROUND) failed");
+    perror("ioctl(READ_BOARD_KEY) failed");
     return;
   }
   printf("I am the key of the VLA: %02x\n",
