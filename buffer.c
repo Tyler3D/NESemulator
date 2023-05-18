@@ -83,16 +83,16 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 
 // Specific to sprites; background code has something else
 // Also for 16x8 mode we use size; the selection of tile/rotation differs
-void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x) {
-	uint32_t sprite_addr;
-	if (id & 1) {
-		sprite_addr = 0x1000 + ((addr >> 1) * 16);
+void sprite_to_buffer(uint8_t y, uint8_t id, uint8_t sprite, uint8_t x) {
+	uint32_t addr;
+	if (sprite & 1) {
+		sprite_addr = 0x1000 + ((id >> 1) * 16);
 	}
 	else sprite_addr = (addr >> 1) * 16; 
-	printf("Addr: %x\n", sprite_addr);
+	printf("Addr: %x\n", addr);
 	uint8_t rotation = id >> 6;
 	uint8_t priority;
-	if ((id << 5) & 1) {
+	if ((sprite << 5) & 1) {
 		priority = 0;
 	}
 	else priority = 2;
@@ -100,7 +100,7 @@ void sprite_to_buffer(uint8_t y, uint8_t addr, uint8_t id, uint8_t x) {
 		y--;
 	}
 	else return;
-	tile_to_buffer(sprite_addr, id & 0x3, priority, x, y, rotation);
+	tile_to_buffer(addr, sprite & 0x3, priority, x, y, rotation);
 }
 
 void oam_to_buffer() {
