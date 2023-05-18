@@ -204,7 +204,7 @@ static int vga_ball_remove(struct platform_device *pdev)
 /* Which "compatible" string(s) to search for in the Device Tree */
 #ifdef CONFIG_OF
 static const struct of_device_id vga_ball_of_match[] = {
-	{.compatible = "csee4840,vga_ball-1.0"},
+	{.compatible = "csee4840,controller-1.0"},
 	{},
 };
 MODULE_DEVICE_TABLE(of, vga_ball_of_match);
@@ -238,5 +238,5 @@ module_init(vga_ball_init);
 module_exit(vga_ball_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Stephen A. Edwards, Columbia University");
-MODULE_DESCRIPTION("VGA ball driver");
+MODULE_AUTHOR("Jason Lam, Otito Darl-Uzu, and Tyler Manrique");
+MODULE_DESCRIPTION("Controller driver");

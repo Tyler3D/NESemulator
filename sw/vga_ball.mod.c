@@ -27,5 +27,5 @@ __used
 __attribute__((section(".modinfo"))) =
 "depends=";
 
-MODULE_ALIAS("of:N*T*Ccsee4840,vga_ball-1.0");
-MODULE_ALIAS("of:N*T*Ccsee4840,vga_ball-1.0C*");
+MODULE_ALIAS("of:N*T*Ccsee4840,controller-1.0");
+MODULE_ALIAS("of:N*T*Ccsee4840,controller-1.0C*");
