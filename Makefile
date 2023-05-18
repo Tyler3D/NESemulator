@@ -23,7 +23,7 @@ dk: nes
 	./nes_emu ./dk.nes
 
 test: nes
-	./nes_emu ./nes_test.nes
+	./nes_emu ./nestest.nes
 
 pac: nes
 	./nes_emu ./pac.nes

@@ -31,7 +31,7 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
         //*data = cpu.ppu_regs[(addr - 0x2000) % 8];
     } else if (addr >= 0x4000 && addr <= 0x4017) {
         if (addr == 0x4016) {
-            *data = 0; //readController(&player1);
+            *data = readController(&player1);
             //printf("READING CONTROLLER 1: %X byte %X for button %X\n", player1.buttons, *data, player1.bitCounter);
             //fwrite("Reading controller\n", sizeof(char), strlen("Reading controller\n"), logfp);
         }
@@ -67,7 +67,7 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
             ppu.dma_page = *data;
             ppu.dma_starting = false;
         } else if (addr == 0x4016) {
-            //poll_controllers(data);
+            poll_controllers(data);
             // printf("Polling controller with data %X\n", *data);
             //fwrite("Polling controller\n", sizeof(char), strlen("Polling controller\n"), logfp);
         } else
