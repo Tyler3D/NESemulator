@@ -85,8 +85,8 @@ void setPixel(uint32_t x, uint32_t y, uint32_t r,
   {
     for (k = 0; k < SCREEN_SCALER; k++)
     {
-      uint32_t location = (((fb_vinfo.xres / 2 - (SCREEN_WIDTH * SCREEN_SCALER) / 2) + (x + k)) * fb_vinfo.bits_per_pixel / 8) +
-                          (((fb_vinfo.yres / 2 - (SCREEN_HEIGHT * SCREEN_SCALER) / 2) + (y + j)) * fb_finfo.line_length);
+      uint32_t location = (((fb_vinfo.xres / 2 - (SCREEN_HEIGHT * SCREEN_SCALER) / 2) + (x + k)) * fb_vinfo.bits_per_pixel / 8) +
+                          (((fb_vinfo.yres / 2 - (SCREEN_WIDTH * SCREEN_SCALER) / 2) + (y + j)) * fb_finfo.line_length);
       *((uint32_t *)(framebuffer + location)) = pixel;
     }
   }
