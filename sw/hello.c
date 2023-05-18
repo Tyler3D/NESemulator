@@ -42,8 +42,8 @@ void print_key()
     perror("ioctl(READ_BOARD_KEY) failed");
     return;
   }
-  printf("I am the key of the VLA: %02x\n",
-         vla.key_pressed);
+  printf("I am the key of the VLA: %u: %u\n",
+         vla.key_pressed >> 5, vla.key_pressed & 1);
 }
 
 /* Set the background color */
