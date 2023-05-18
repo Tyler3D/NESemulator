@@ -108,8 +108,14 @@ void pixel_to_buffer(pixel *pixel, uint16_t x, uint16_t y) {
 // Palette not implemented
 // Rotation not yet implemented
 void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, uint16_t y, uint8_t rotation, bool sprite) {
-	uint8_t x_offset = 0;
+	uint8_t x_offset;
 	uint8_t y_offset = 0;
+	if (rotation){
+		x_offset = 7;
+	}
+	else {
+		x_offset = 0;
+	}
 	for (int i = addr; i < addr + 8; i++) {
 		uint8_t value;
 		uint8_t left;
