@@ -111,8 +111,8 @@ void nametable_to_buffer() {
 		addr = byte << 4;
 		// Addr, palette, prio, x, y, rotation
 		// Palette needs to be implemented; prio and rotation are fixed
-		//tile_to_buffer((0x19 << 4) + (BACKGROUND_PATTERN_ADDR ? 0x1000 : 0x0000), 0, 1, x, y, 0);
-		tile_to_buffer(addr + (BACKGROUND_PATTERN_ADDR ? 0x1000 : 0x0000), 0, 1, x * 8, y * 8, 0);
+		tile_to_buffer((0x19 << 4) + (BACKGROUND_PATTERN_ADDR ? 0x1000 : 0x0000), 0, 1, x, y, 0);
+		// tile_to_buffer(addr + (BACKGROUND_PATTERN_ADDR ? 0x1000 : 0x0000), 0, 1, x * 8, y * 8, 0);
 		x++;
 		if (x >= 32) {
 			x = 0;
