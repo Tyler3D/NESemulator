@@ -41,7 +41,7 @@ pixel convert_rgb_background(uint8_t value, uint8_t pallete, uint8_t prio) {
 	uint8_t index;
 	//printf("Trying to read pallette %x from address %x\n", pallete, 0x3F00 + (pallete * 4) + value);
 	ppu_read(0x3F00 + (pallete * 4) + value, &index);
-	//printf("At index pallette %x\n", index);
+	printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
 	pix.r = rgb.r;
@@ -248,7 +248,7 @@ void nametable_to_buffer() {
 		else
 			exit(1);
 		//log_byte_at("Pallete to use", pallete_to_use);
-		printf("Pallete to use %x\n", pallete_to_use);
+		// printf("Pallete to use %x\n", pallete_to_use);
 
 
 		// Addr, palette, prio, x, y, rotation
