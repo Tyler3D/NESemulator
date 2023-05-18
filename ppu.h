@@ -91,6 +91,7 @@ enum regs {
 };
 
 pixel buffer[SCREEN_HEIGHT * SCREEN_WIDTH];
+pixel screen[SCREEN_HEIGHT * SCREEN_WIDTH];
 
 void ppu_clock();
 bool cpu_ppu_read(uint16_t addr, uint8_t *data);

@@ -97,19 +97,19 @@ void setPixel(uint32_t x, uint32_t y, uint32_t r,
  * and render to screen
  */
 void nes_screen()
-// void nes_screen(color **screen)
 {
-  //printf("Framebuffer %d", fbopen());
-  //printf("Framebuffer %d", fb_vinfo.yres);
   uint32_t x, y;
-  for (y = 0; y < SCREEN_HEIGHT * SCREEN_SCALER; y += SCREEN_SCALER)
+  for (y = 0; y < NES_SCRN_H * SCREEN_SCALER; y += SCREEN_SCALER)
   {
-    for (x = 0; x < SCREEN_WIDTH * SCREEN_SCALER; x += SCREEN_SCALER)
+    for (x = 0; x < NES_SCRN_W * SCREEN_SCALER; x += SCREEN_SCALER)
     {
       // 81, 245, 125
 
       //setPixel(x, y, 81, 245, 125, 0);
-      setPixel(x, y, buffer[y * SCREEN_WIDTH + x].r, buffer[y * SCREEN_WIDTH + x].b, buffer[y * SCREEN_WIDTH + x].g, 0);
+      if (ppu.framecount % 2 == 0)
+        setPixel(x, y, buffer[y * SCREEN_WIDTH + x].r, buffer[y * SCREEN_WIDTH + x].b, buffer[y * SCREEN_WIDTH + x].g, 0);
+      else
+        setPixel(x, y, screen[y * SCREEN_WIDTH + x].r, screen[y * SCREEN_WIDTH + x].b, screen[y * SCREEN_WIDTH + x].g, 0);
       // setPixel(x, y, screen[y][x].r, screen[y][x].b, screen[y][x].g, 0);
     }
   }
