@@ -82,7 +82,12 @@ bool ppu_read(uint16_t addr, uint8_t *data) {
                *data = ppu.vram[addr + 1024];
          }
     } else if (addr >= 0x3F00 && addr <= 0x3FFF) {
-         *data = ppu.palettes[addr & 0x20];
+         addr &= 0x001F;
+         if (addr == 0x0010) addr = 0x0000;
+         if (addr == 0x0014) addr = 0x0004;
+         if (addr == 0x0018) addr = 0x0008;
+         if (addr == 0x001C) addr = 0x000C;
+         *data = ppu.palettes[addr];
     } else
         return false;
     return true;
