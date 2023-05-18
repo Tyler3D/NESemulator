@@ -141,7 +141,7 @@ changes the PC to the address in 0xFFFA-0xFFFB (NMI vector) in the cartridge.
 void cpu_nmi() {
     //char buf[1024];
     //sprintf(buf, "Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
-    //printf("Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
+    printf("Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
     //fwrite(buf, sizeof(char), strnlen(buf, 1024), logfp);
     uint16_t returnAddr = cpu.pc; // check if -1 or not
     cpu.low = returnAddr & 0xFF;
