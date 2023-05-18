@@ -74,7 +74,7 @@ static char read_key(bool strobe)
 	{
 		return ioread8(STROBE_ON(dev.virtbase));
 	}
-	return ioread8(STROBE_OFF(dev.virtbase))
+	return ioread8(STROBE_OFF(dev.virtbase));
 }
 
 static void write_coords(char x, char y)
