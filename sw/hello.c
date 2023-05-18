@@ -91,7 +91,10 @@ int main()
 #define COLORS 9
 
   printf("VGA ball Userspace program started\n");
-  print_key();
+  while(1)
+  {print_key();
+  usleep(100000);
+  }
   // if ((vga_ball_fd = open(filename, O_RDWR)) == -1)
   // {
   //   fprintf(stderr, "could not open %s\n", filename);
