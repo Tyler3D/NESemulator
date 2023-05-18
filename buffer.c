@@ -22,17 +22,17 @@ color system_pallete[64] = {
 pixel convert_rgb_tile(uint8_t value, uint8_t pallete, uint8_t prio) {
 	uint8_t index;
 	//printf("Trying to read pallette %x from address %x\n", pallete, 0x3F00 + (pallete * 4) + value);
-	ppu_read(0x3F00 + (pallete * 4) + value, &index);
+	ppu_read(0x3F00 + 16 + (pallete * 4) + value, &index);
 	// if (value)
 	//printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
-	// pix.r = rgb.r;
-	// pix.g = rgb.g;
-	// pix.b = rgb.b;
-	pix.r = value * 255 / 3;
-	pix.g = value * 255 / 3;
-	pix.b = value * 255 / 3;
+	pix.r = rgb.r;
+	pix.g = rgb.g;
+	pix.b = rgb.b;
+	// pix.r = value * 255 / 3;
+	// pix.g = value * 255 / 3;
+	// pix.b = value * 255 / 3;
 	pix.prio = prio;
 	return pix;
 }
@@ -160,7 +160,7 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 			//if (value > 0) {
 			//printf("Attempting to convert RGB\n");
 			if (sprite) {
-				rgb = convert_rgb_tile(value, palette + 4, prio);
+				rgb = convert_rgb_tile(value, palette, prio);
 			}
 			else {
 				rgb = convert_rgb_background(value, palette, prio);
