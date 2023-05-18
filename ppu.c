@@ -39,6 +39,7 @@ void ppu_reset() {
    ppu.dma_buffer = 0;
    ppu.dma = false;
    ppu.dma_starting = false;
+   memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(pixel));
 }
 
 /* 

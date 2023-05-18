@@ -19,5 +19,5 @@ fb.o: fb.c ppu.h fb.h
 clean :
 	rm -rf *.o nes_emu *.txt
 	
-run: nes
+run: clean nes
 	./nes_emu ./nestest.nes
