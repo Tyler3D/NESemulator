@@ -1,0 +1,1 @@
+cmd_/root/embedded_lab3/lab3-sw/vga_ball.ko := ld -r  -EL -T ./scripts/module-common.lds -T ./arch/arm/kernel/module.lds  --build-id  -o /root/embedded_lab3/lab3-sw/vga_ball.ko /root/embedded_lab3/lab3-sw/vga_ball.o /root/embedded_lab3/lab3-sw/vga_ball.mod.o ;  true
