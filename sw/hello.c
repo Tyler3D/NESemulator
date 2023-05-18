@@ -91,18 +91,18 @@ int main()
 #define COLORS 9
 
   printf("VGA ball Userspace program started\n");
-  while(1)
-  {print_key();
-  usleep(100000);
-  }
-  // if ((vga_ball_fd = open(filename, O_RDWR)) == -1)
-  // {
-  //   fprintf(stderr, "could not open %s\n", filename);
-  //   return -1;
+  // while(1)
+  // {print_key();
+  // usleep(100000);
   // }
+  if ((vga_ball_fd = open(filename, O_RDWR)) == -1)
+  {
+    fprintf(stderr, "could not open %s\n", filename);
+    return -1;
+  }
 
-  // printf("initial state: ");
-  // print_background_color();
+  printf("initial state: ");
+  //print_background_color();
   // for (i = 0; i < 24; i++)
   // {
   //   set_background_color(&colors[i % COLORS]);
