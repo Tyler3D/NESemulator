@@ -346,7 +346,7 @@ void ppu_clock() {
       if (IS_NMI_ENABLED())
          cpu_nmi();
       nametable_to_buffer();
-      oam_to_buffer();
+//      oam_to_buffer();
       log_namespace();
       log_oam();
       log_pixels();
