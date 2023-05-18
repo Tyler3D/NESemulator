@@ -99,6 +99,7 @@ void setPixel(uint32_t x, uint32_t y, uint32_t r,
 void nes_screen()
 {
   uint32_t x, y;
+  memset(framebuffer, 0, fb_vinfo.xres * fb_vinfo.yres * BITS_PER_PIXEL / 8);
   for (y = 0; y < SCREEN_HEIGHT * SCREEN_SCALER; y += SCREEN_SCALER)
   {
     for (x = 0; x < SCREEN_WIDTH * SCREEN_SCALER; x += SCREEN_SCALER)
