@@ -37,7 +37,7 @@ void poll_controllers(uint8_t *data) {
     //    CLEAR_CONTROLLER(player1.buttons);
     //} else {
     //if (ppu.framecount < 30) {
-       SET_START_BUTTON(player1.buttons);
+    //    SET_START_BUTTON(player1.buttons);
     //} else {
     //    CLEAR_START_BUTTON(player1.buttons);
     //    SET_RIGHT_BUTTON(player1.buttons);
