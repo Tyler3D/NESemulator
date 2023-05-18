@@ -50,10 +50,10 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 			} else 
 				value = 0;
 			// Note palette is set to 0 for temporary purposes
-			//if (value > 0) {
-			pixel rgb = convert_rgb(0, value, prio);
-			pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
-			//}
+			if (value > 0) {
+				pixel rgb = convert_rgb(0, value, prio);
+				pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
+			}
 			x_offset++;
 		}
 		// Note palette is set to 0 for temporary purposes
