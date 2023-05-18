@@ -1,17 +1,17 @@
 #include "ppu.h"
+#include "logger.h"
 
 // Implement later; for now just send b/w
 pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t prio) {
 	pixel rgb;
-	rgb.r = (value * 255) / 3;
-	rgb.g = (value * 255) / 3;
-	rgb.b = (value * 255) / 3;
+	rgb.r = value; // * 255 / 3;
+	rgb.g = value; // * 255 / 3;
+	rgb.b = value; // * 255 / 3;
 	rgb.prio = prio;
 	return rgb;
 }
 
 void pixel_to_buffer(pixel pixel, uint16_t x, uint16_t y) {
-	// printf("X: %d, Y: %d, Pixel: %d", pixel.r);
 	if (buffer[y * SCREEN_WIDTH + x].prio <= pixel.prio){
 		buffer[y * SCREEN_WIDTH + x] = pixel;
 	}
@@ -83,41 +83,54 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint8_t x, uin
 
 // Specific to sprites; background code has something else
 // Also for 16x8 mode we use size; the selection of tile/rotation differs
-void sprite_to_buffer(uint8_t y, uint8_t id, uint8_t sprite, uint8_t x) {
-	uint32_t addr;
-	if (sprite & 1) {
-		addr = 0x1000 + ((id >> 1) * 16);
-	}
-	else addr = (id >> 1) * 16; 
-	printf("Addr: %x\n", addr);
-	uint8_t rotation = id >> 6;
-	uint8_t priority;
-	if ((sprite << 5) & 1) {
-		priority = 0;
-	}
-	else priority = 2;
-	if (y > 0) {
-		y--;
-	}
-	else return;
-	tile_to_buffer(addr, sprite & 0x3, priority, x, y, rotation);
+void sprite_to_buffer(uint8_t y, uint8_t id, uint8_t attributes, uint8_t x) {
+	uint16_t sprite_addr = (id << 4) + (SPRITE_PATTERN_ADDR ? 0x1000 : 0x0000);
+	printf("Sprite addr %X\n", sprite_addr);
+	//if (id & 1) {
+	//	sprite_addr = 0x1000 + (id * 16);
+	//} else sprite_addr = (id >> 1) * 16; 
+
+	uint8_t rotation = attributes >> 6;
+	uint8_t priority = (attributes >> 5) & 0x1;
+	//if ((id << 5) & 1) {
+	//	priority = 0;
+	//}
+	//else priority = 2;
+	//if (y > 0) {
+	//	y--;
+	//}
+	//else return;
+	printf("Sprite addr %X\n", sprite_addr);
+	tile_to_buffer(sprite_addr, attributes & 0x3, priority, x, y, rotation);
 }
 
 void oam_to_buffer() {
-	uint8_t y;
-	uint8_t id;
-	uint8_t attributes;
-	uint8_t x; 
-	uint8_t *oam = (uint8_t *) ppu.OAM;
+	//uint8_t y;
+	//uint8_t id;
+	//uint8_t attributes;
+	//uint8_t x; 
+	//uint8_t *oam = (uint8_t *) ppu.OAM;
+	log_oam();
+	fflush(logfp);
+	for (int i = 0; i < 64; i++) {
+		if (ppu.OAM[i].id == 0xa2) {
+			printf("Printing 0xA2\n");
+			sprite_to_buffer(ppu.OAM[i].y, ppu.OAM[i].id, ppu.OAM[i].attributes, ppu.OAM[i].x);
+		}
+	}
+	/*
 	for (int i = 0; i < 256; i = i + 4) {
 		y = oam[i];
 		id = oam[i + 1];
 		attributes = oam[i + 2];
 		x = oam[i + 3];
-		 if (id || attributes) {
+		if (i == 0)
 			sprite_to_buffer(y, id, attributes, x);
-		}
+		//if (y && id && attributes && x) {
+		//sprite_to_buffer(y, id, attributes, x);
+		//}
 	}
+	*/
 }
 
 void nametable_to_buffer() {
