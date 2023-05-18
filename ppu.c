@@ -360,6 +360,7 @@ void ppu_clock() {
       log_namespace();
       //log_oam();
       log_pixels();
+      log_pal();
       nes_screen();
       SET_VERTICAL_BLANK()
       ppu.framecount++;

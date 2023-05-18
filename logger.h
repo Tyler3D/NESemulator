@@ -16,5 +16,6 @@ void log_byte(char *buf, uint16_t byte);
 void log_second_namespace();
 void log_pixels();
 void log_oam();
+void log_pal();
 
 #endif

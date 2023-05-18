@@ -153,6 +153,19 @@ void log_pixels() {
     fwrite(buf, sizeof(char), strlen(buf), logfp);
 }
 
+void log_pal() {
+    return;
+    char buf[4096] = {0};
+    for (uint8_t y = 0; y < 2; y++) {
+        for (uint8_t x = 0; x < 16; x++) {
+            sprintf(buf + strlen(buf), "%-2x ", ppu.palettes[(y * 16) + x]);
+        }
+        sprintf(buf + strlen(buf), "\n");
+    }
+    fwrite("Printing Pal\n", sizeof(char), strlen("Printing Pal\n"), logfp);
+    fwrite(buf, sizeof(char), strlen(buf), logfp);
+}
+
 void log_byte(char *buf, uint16_t byte) {
     return;
     fflush(logfp);
