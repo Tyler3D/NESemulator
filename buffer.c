@@ -33,7 +33,8 @@ pixel convert_rgb_tile(uint8_t value, uint8_t pallete, uint8_t prio) {
 	// pix.r = value * 255 / 3;
 	// pix.g = value * 255 / 3;
 	// pix.b = value * 255 / 3;
-	pix.prio = prio;
+	if (value == 0) pix.prio = 0;
+	else pix.prio = prio;
 	return pix;
 }
 
