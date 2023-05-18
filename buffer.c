@@ -44,12 +44,12 @@ pixel convert_rgb_background(uint8_t value, uint8_t pallete, uint8_t prio) {
 	if (value > 0) printf("At index pallette %x\n", index);
 	color rgb = system_pallete[index];
 	pixel pix;
-	pix.r = rgb.r;
-	pix.g = rgb.g;
-	pix.b = rgb.b;
-	// pix.r = value * 255 / 3;
-	// pix.g = value * 255 / 3;
-	// pix.b = value * 255 / 3;
+	// pix.r = rgb.r;
+	// pix.g = rgb.g;
+	// pix.b = rgb.b;
+	pix.r = value * 255 / 3;
+	pix.g = value * 255 / 3;
+	pix.b = value * 255 / 3;
 	pix.prio = prio;
 	return pix;
 }
