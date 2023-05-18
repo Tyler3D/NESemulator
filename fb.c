@@ -31,7 +31,7 @@ uint8_t *fbp;
 #define FBDEV "/dev/fb0"
 #define BITS_PER_PIXEL 32
 #define NES_PIXEL_BITS 8
-#define SCREEN_SCALER 3
+#define SCREEN_SCALER 1
 
 struct fb_fix_screeninfo fb_finfo;
 struct fb_var_screeninfo fb_vinfo;
