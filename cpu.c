@@ -33,7 +33,7 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
         if (addr == 0x4016) {
             *data = 0; //readController(&player1);
             //printf("READING CONTROLLER 1: %X byte %X for button %X\n", player1.buttons, *data, player1.bitCounter);
-            fwrite("Reading controller\n", sizeof(char), strlen("Reading controller\n"), logfp);
+            //fwrite("Reading controller\n", sizeof(char), strlen("Reading controller\n"), logfp);
         }
         else if (addr == 0x4017)
             *data = readController(&player2);
@@ -67,9 +67,9 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
             ppu.dma_page = *data;
             ppu.dma_starting = false;
         } else if (addr == 0x4016) {
-            poll_controllers(data);
+            //poll_controllers(data);
             // printf("Polling controller with data %X\n", *data);
-            fwrite("Polling controller\n", sizeof(char), strlen("Polling controller\n"), logfp);
+            //fwrite("Polling controller\n", sizeof(char), strlen("Polling controller\n"), logfp);
         } else
             cpu.apu_io_regs[addr - 0x4000] = *data;
     } else if (addr >= 0x4018 && addr <= 0x401F) {
@@ -139,10 +139,10 @@ changes the PC to the address in 0xFFFA-0xFFFB (NMI vector) in the cartridge.
 */
 
 void cpu_nmi() {
-    char buf[1024];
-    sprintf(buf, "Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
-    printf("Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
-    fwrite(buf, sizeof(char), strnlen(buf, 1024), logfp);
+    //char buf[1024];
+    //sprintf(buf, "Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
+    //printf("Frame: %d, Scanline %d, Cycles: %d\n", ppu.framecount, ppu.scanline, ppu.cycles);
+    //fwrite(buf, sizeof(char), strnlen(buf, 1024), logfp);
     uint16_t returnAddr = cpu.pc; // check if -1 or not
     cpu.low = returnAddr & 0xFF;
     cpu.high = (returnAddr >> 8) & 0xFF;
