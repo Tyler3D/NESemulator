@@ -45,6 +45,12 @@ typedef struct pixel {
     uint8_t prio;
 } pixel;
 
+typedef struct color {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b; 
+} color;
+
 /*
 https://www.nesdev.org/wiki/PPU_OAM
 The OAM (Object Attribute Memory) is internal memory inside the PPU
