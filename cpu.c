@@ -32,7 +32,7 @@ bool cpu_read(uint16_t addr, uint8_t *data) {
     } else if (addr >= 0x4000 && addr <= 0x4017) {
         if (addr == 0x4016) {
             *data = 0; //readController(&player1);
-            printf("READING CONTROLLER 1: %X byte %X for button %X\n", player1.buttons, *data, player1.bitCounter);
+            //printf("READING CONTROLLER 1: %X byte %X for button %X\n", player1.buttons, *data, player1.bitCounter);
             fwrite("Reading controller\n", sizeof(char), strlen("Reading controller\n"), logfp);
         }
         else if (addr == 0x4017)
@@ -68,7 +68,7 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
             ppu.dma_starting = false;
         } else if (addr == 0x4016) {
             poll_controllers(data);
-            printf("Polling controller with data %X\n", *data);
+            // printf("Polling controller with data %X\n", *data);
             fwrite("Polling controller\n", sizeof(char), strlen("Polling controller\n"), logfp);
         } else
             cpu.apu_io_regs[addr - 0x4000] = *data;
@@ -78,7 +78,7 @@ bool cpu_write(uint16_t addr, uint8_t *data) {
     } else if (addr >= 0x4020 && addr <= 0xFFFF) {
         // For other mappers
         // Might need different method than using rom.readCPUMapper
-        printf("Writing to rom? Sus???\n");
+        // printf("Writing to rom? Sus???\n");
         return false;
         //if (!rom.readCPUMapper(addr, &mapped_addr))
         //    return false;

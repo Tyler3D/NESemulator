@@ -20,11 +20,11 @@ void poll_controllers(uint8_t *data) {
         player2.bitCounter = 0;
         player1.strobeBit = true;
         player2.strobeBit = true;
-        printf("Strobe bit on\n");
+        //printf("Strobe bit on\n");
     } else {
         player1.strobeBit = false;
         player2.strobeBit = false;
-        printf("Strobe bit off\n");
+        //printf("Strobe bit off\n");
     }
     if (player1.isPolling) {
         player1.isPolling = false;
