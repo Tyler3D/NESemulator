@@ -357,7 +357,7 @@ void ppu_clock() {
          cpu_nmi();
          
       //if ((ppu.cycles % 2) == 1)
-      memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH);
+      memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(pixel));
       //else
       //   memset(screen, 0, SCREEN_HEIGHT * SCREEN_WIDTH);
       // nametable_to_buffer();
