@@ -106,10 +106,10 @@ void nes_screen()
       // 81, 245, 125
 
       //setPixel(x, y, 81, 245, 125, 0);
-      if (ppu.framecount % 2 == 0)
+      //if (ppu.framecount % 2 == 0)
         setPixel(x, y, buffer[y * SCREEN_WIDTH + x].r, buffer[y * SCREEN_WIDTH + x].b, buffer[y * SCREEN_WIDTH + x].g, 0);
-      else
-        setPixel(x, y, screen[y * SCREEN_WIDTH + x].r, screen[y * SCREEN_WIDTH + x].b, screen[y * SCREEN_WIDTH + x].g, 0);
+      //else
+      //  setPixel(x, y, screen[y * SCREEN_WIDTH + x].r, screen[y * SCREEN_WIDTH + x].b, screen[y * SCREEN_WIDTH + x].g, 0);
       // setPixel(x, y, screen[y][x].r, screen[y][x].b, screen[y][x].g, 0);
     }
   }

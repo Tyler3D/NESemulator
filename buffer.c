@@ -1,12 +1,28 @@
 #include "ppu.h"
 #include "logger.h"
 
+pixel system_pallete[64] = {
+   {0x80, 0x80, 0x80}, {0x00, 0x3D, 0xA6}, {0x00, 0x12, 0xB0}, {0x44, 0x00, 0x96}, {0xA1, 0x00, 0x5E},
+   {0xC7, 0x00, 0x28}, {0xBA, 0x06, 0x00}, {0x8C, 0x17, 0x00}, {0x5C, 0x2F, 0x00}, {0x10, 0x45, 0x00},
+   {0x05, 0x4A, 0x00}, {0x00, 0x47, 0x2E}, {0x00, 0x41, 0x66}, {0x00, 0x00, 0x00}, {0x05, 0x05, 0x05},
+   {0x05, 0x05, 0x05}, {0xC7, 0xC7, 0xC7}, {0x00, 0x77, 0xFF}, {0x21, 0x55, 0xFF}, {0x82, 0x37, 0xFA},
+   {0xEB, 0x2F, 0xB5}, {0xFF, 0x29, 0x50}, {0xFF, 0x22, 0x00}, {0xD6, 0x32, 0x00}, {0xC4, 0x62, 0x00},
+   {0x35, 0x80, 0x00}, {0x05, 0x8F, 0x00}, {0x00, 0x8A, 0x55}, {0x00, 0x99, 0xCC}, {0x21, 0x21, 0x21},
+   {0x09, 0x09, 0x09}, {0x09, 0x09, 0x09}, {0xFF, 0xFF, 0xFF}, {0x0F, 0xD7, 0xFF}, {0x69, 0xA2, 0xFF},
+   {0xD4, 0x80, 0xFF}, {0xFF, 0x45, 0xF3}, {0xFF, 0x61, 0x8B}, {0xFF, 0x88, 0x33}, {0xFF, 0x9C, 0x12},
+   {0xFA, 0xBC, 0x20}, {0x9F, 0xE3, 0x0E}, {0x2B, 0xF0, 0x35}, {0x0C, 0xF0, 0xA4}, {0x05, 0xFB, 0xFF},
+   {0x5E, 0x5E, 0x5E}, {0x0D, 0x0D, 0x0D}, {0x0D, 0x0D, 0x0D}, {0xFF, 0xFF, 0xFF}, {0xA6, 0xFC, 0xFF},
+   {0xB3, 0xEC, 0xFF}, {0xDA, 0xAB, 0xEB}, {0xFF, 0xA8, 0xF9}, {0xFF, 0xAB, 0xB3}, {0xFF, 0xD2, 0xB0},
+   {0xFF, 0xEF, 0xA6}, {0xFF, 0xF7, 0x9C}, {0xD7, 0xE8, 0x95}, {0xA6, 0xED, 0xAF}, {0xA2, 0xF2, 0xDA},
+   {0x99, 0xFF, 0xFC}, {0xDD, 0xDD, 0xDD}, {0x11, 0x11, 0x11}, {0x11, 0x11, 0x11}
+};
+
+
 // Implement later; for now just send b/w
-pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t prio) {
-	pixel rgb;
-	rgb.r = value * 255 / 3;
-	rgb.g = value * 255 / 3;
-	rgb.b = value * 255 / 3;
+pixel convert_rgb(uint8_t hue, uint8_t value, uint8_t pallete, uint8_t prio) {
+	uint8_t index;
+	ppu_read(0x3F00 + (pallete * 4) + value, index);
+	pixel rgb = system_pallete[index];
 	rgb.prio = prio;
 	return rgb;
 }
@@ -25,6 +41,7 @@ void pixel_to_buffer(pixel *pixel, uint16_t x, uint16_t y) {
 	}
 }
 
+/*
 // Hardcoded 8x8 tile get that puts it into buffer
 // Palette not implemented
 // Rotation not yet implemented
@@ -53,8 +70,62 @@ void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, ui
 				value = 0;
 			// Note palette is set to 0 for temporary purposes
 			//if (value > 0) {
-				pixel rgb = convert_rgb(0, value, prio);
-				pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
+			pixel rgb = convert_rgb(0, value, prio);
+			pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
+			//}
+			x_offset++;
+		}
+		// Note palette is set to 0 for temporary purposes
+		// Implement rotation here
+		x_offset = 0;
+		y_offset++;
+	}
+}
+
+
+void pixel_to_buffer(pixel *pixel, uint16_t x, uint16_t y) {
+	if (x > 255 || y > 240)
+		return;
+	if ((ppu.framecount % 2) == 1) {
+		if (buffer[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
+			buffer[y * SCREEN_WIDTH + x] = *pixel;
+		}
+	} else {
+		if (screen[y * SCREEN_WIDTH + x].prio <= pixel->prio) {
+			screen[y * SCREEN_WIDTH + x] = *pixel;
+		}
+	}
+}
+*/
+
+// Hardcoded 8x8 tile get that puts it into buffer
+// Palette not implemented
+// Rotation not yet implemented
+void tile_to_buffer(uint16_t addr, uint8_t palette, uint8_t prio, uint16_t x, uint16_t y, uint8_t rotation, bool sprite) {
+	uint8_t x_offset = 0;
+	uint8_t y_offset = 0;
+	for (int i = addr; i < addr + 8; i++) {
+		uint8_t value;
+		uint8_t left;
+		uint8_t right;
+
+		ppu_read(i, &left);
+		ppu_read(i + 8, &right);
+		for (int j = 7; j >= 0; j--) {
+			uint8_t bit_left = (left >> j) & 1;
+			uint8_t bit_right = (right >> j) & 1;
+			if (bit_left & bit_right) {
+				value = 3;
+			} else if (bit_right) {
+				value = 2;
+			} else if (bit_left) {
+				value = 1;
+			} else 
+				value = 0;
+			// Note palette is set to 0 for temporary purposes
+			//if (value > 0) {
+			pixel rgb = convert_rgb(0, value, (sprite == 0) ? palette : (palette + 4), prio);
+			pixel_to_buffer(&rgb, x + x_offset, y + y_offset);
 			//}
 			if (rotation) x_offset--;
 			else x_offset++;
@@ -95,7 +166,7 @@ void sprite_to_buffer(uint8_t y, uint8_t id, uint8_t attributes, uint8_t x) {
 	uint16_t sprite_addr = (id << 4) + (SPRITE_PATTERN_ADDR ? 0x1000 : 0x0000);
 	uint8_t rotation = attributes >> 6;
 	uint8_t priority = (attributes >> 5) & 0x1;
-	tile_to_buffer(sprite_addr, attributes & 0x3, (priority == 1) ? 0 : 2, x, y, rotation);
+	tile_to_buffer(sprite_addr, (attributes & 0x3), (priority == 1) ? 0 : 2, x, y, rotation, true);
 }
 
 void oam_to_buffer() {
@@ -111,15 +182,29 @@ void nametable_to_buffer() {
 	uint8_t y = 0;
 	uint8_t byte;
 	// Note: addr calculation is nametable_base + background_base + nametable_byte;
-	uint16_t addr;
+	uint16_t nt;
+	uint16_t at;
+	uint8_t pallete_to_use;
 	for (int i = 0; i < 960; i++) { // Need to change for scroll
 		ppu_read(0x2000 + i, &byte);
 		// Calculate addr later!
-		addr = byte << 4;
+		nt = byte << 4;
+		ppu_read(0x23C0 | (i & 0x0C00), &at);
+		// Pallete_to_use contains the 2 bits 
+		if ((x & 0x00) && (y & 0x00)) // Use upper left of AT
+			pallete_to_use = (at & (0x03));
+		else if ((x & 0x01) && (y & 0x00)) // Use upper right of AT
+			pallete_to_use = (at & (0xc)) >> 2;
+		else if ((x & 0x00) && (y & 0x01)) // Use lower left of AT
+			pallete_to_use = (at & (0x30)) >> 4;
+		else if ((x & 0x01) && (y & 0x01)) // Use lower left of AT
+			pallete_to_use = (at & (0xc0)) >> 6;
+
+
 		// Addr, palette, prio, x, y, rotation
 		// Palette needs to be implemented; prio and rotation are fixed
 		//tile_to_buffer((0x19 << 4) + (BACKGROUND_PATTERN_ADDR ? 0x1000 : 0x0000), 0, 1, x, y, 0);
-		tile_to_buffer(addr + (BACKGROUND_PATTERN_ADDR ? 0x1000 : 0x0000), 0, 1, x * 8, y * 8, 0);
+		tile_to_buffer(nt + (BACKGROUND_PATTERN_ADDR ? 0x1000 : 0x0000), pallete_to_use, 1, x * 8, y * 8, 0, false);
 		x++;
 		if (x >= 32) {
 			x = 0;
