@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (!fbopen()) {
+    if (fbopen() != 0) {
        printf("Frame buffer isn't open\n");
        return 0;
     }
