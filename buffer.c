@@ -200,26 +200,28 @@ void nametable_to_buffer() {
 	uint8_t at;
 	uint8_t pallete_to_use;
 	for (int i = 0; i < 960; i++) { // Need to change for scroll
+		uint8_t x_mod = x % 4 / 2;
+		uint8_t y_mod = y % 4 / 2;
 		ppu_read(0x2000 + i, &byte);
 		// Calculate addr later!
 		nt = byte << 4;
 		//printf("Reading from address %x\n", 0x23C0 | (i & 0x0C00));
 		//fflush(logfp);
-		ppu_read(0x23C0 | (i & 0x0C00), &at);
-		//printf("Reading from at %x %x\n", byte, at);
+		ppu_read(0x23C0 + y / 4 * 8 + x, &at);
+		printf("Reading from at %x %x\n", byte, at);
 		// Pallete_to_use contains the 2 bits 
-		if (((x % 2) == 0) && ((y % 2) == 0)) // Use upper left of AT
-			pallete_to_use = (at & (0x03));
-		else if (((x % 2) == 1) && ((y % 2) == 0)) // Use upper right of AT
-			pallete_to_use = (at & (0xc)) >> 2;
-		else if (((x % 2) == 0) && ((y % 2) == 1)) // Use lower left of AT
-			pallete_to_use = (at & (0x30)) >> 4;
-		else if (((x % 2) == 1) && ((y % 2) == 1)) // Use lower left of AT
-			pallete_to_use = (at & (0xc0)) >> 6;
+		if (x_mod == 0 && y_mod == 0) // Use upper left of AT
+			pallete_to_use = (at & (0b11));
+		else if (x_mod == 1 && y_mod == 0) // Use upper right of AT
+			pallete_to_use = (at & (0b11 << 2));
+		else if (x_mod == 0 && y_mod == 1) // Use lower left of AT
+			pallete_to_use = (at & (0b11 << 4));
+		else if (x_mod == 1 && y_mod == 1) // Use lower left of AT
+			pallete_to_use = (at & (0b11 << 6));
 		else
 			exit(1);
 		//log_byte_at("Pallete to use", pallete_to_use);
-		//printf("Pallete to use %x\n", pallete_to_use);
+		printf("Pallete to use %x\n", pallete_to_use);
 
 
 		// Addr, palette, prio, x, y, rotation
